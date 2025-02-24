@@ -18,9 +18,10 @@ async function fetchHistoricalData(id: string, days: number): Promise<ChartData[
   );
   if (!response.ok) throw new Error('Failed to fetch historical data');
   const data = await response.json();
-  return data.prices.map(([timestamp, price]: [number, number]) => ({
+  return data.prices.map(([timestamp, price]: [number, number], index: number) => ({
     timestamp,
     price,
+    volume: data.total_volumes?.[index]?.[1],
   }));
 }
 

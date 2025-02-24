@@ -20,9 +20,20 @@ export type TimeFrame = '24h' | '7d' | '30d';
 export interface ChartData {
   timestamp: number;
   price: number;
+  volume?: number;
+  rsi?: number;
+  sma?: number;
+  ema?: number;
 }
 
 export interface ComparisonData {
   crypto1: CryptoData | null;
   crypto2: CryptoData | null;
+}
+
+export interface TechnicalIndicator {
+  name: string;
+  value: number;
+  interpretation: 'bullish' | 'bearish' | 'neutral';
+  description: string;
 }

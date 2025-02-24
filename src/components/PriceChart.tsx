@@ -7,7 +7,7 @@ import {
   XAxis,
   YAxis,
   Line,
-  CompositeChart,
+  ComposedChart,
   Legend,
 } from "recharts";
 import { ChartData, TimeFrame, TechnicalIndicator } from "@/lib/types";
@@ -122,7 +122,7 @@ export default function PriceChart({
         <CardContent>
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <CompositeChart data={chartData}>
+              <ComposedChart data={chartData}>
                 <defs>
                   <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -150,27 +150,32 @@ export default function PriceChart({
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
+                      const price = Number(payload[0]?.value || 0);
+                      const rsi = payload[1]?.value ? Number(payload[1].value) : undefined;
+                      const sma = payload[2]?.value ? Number(payload[2].value) : undefined;
+                      const ema = payload[3]?.value ? Number(payload[3].value) : undefined;
+
                       return (
                         <div className="glass p-3 rounded-lg space-y-2">
                           <p className="text-sm font-medium">
                             {format(new Date(payload[0].payload.timestamp), "PPp")}
                           </p>
                           <p className="text-sm">
-                            Price: ${payload[0].value.toLocaleString()}
+                            Price: ${price.toLocaleString()}
                           </p>
-                          {showIndicators.rsi && (
+                          {showIndicators.rsi && rsi !== undefined && (
                             <p className="text-sm">
-                              RSI: {payload[1]?.value.toFixed(2)}
+                              RSI: {rsi.toFixed(2)}
                             </p>
                           )}
-                          {showIndicators.sma && (
+                          {showIndicators.sma && sma !== undefined && (
                             <p className="text-sm">
-                              SMA: ${payload[2]?.value.toFixed(2)}
+                              SMA: ${sma.toFixed(2)}
                             </p>
                           )}
-                          {showIndicators.ema && (
+                          {showIndicators.ema && ema !== undefined && (
                             <p className="text-sm">
-                              EMA: ${payload[3]?.value.toFixed(2)}
+                              EMA: ${ema.toFixed(2)}
                             </p>
                           )}
                         </div>
@@ -218,7 +223,7 @@ export default function PriceChart({
                     name="EMA"
                   />
                 )}
-              </CompositeChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
           

@@ -1,7 +1,8 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCryptoData } from "@/hooks/useCryptoData";
 import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -11,18 +12,43 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpCircle, ArrowDownCircle, Wallet } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, Wallet, ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
 
 type TransactionType = "buy" | "sell";
 type AmountType = "coin" | "usd";
 
 export default function WalletPage() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { data: cryptos, isLoading } = useCryptoData();
   const [selectedCrypto, setSelectedCrypto] = useState("");
   const [transactionType, setTransactionType] = useState<TransactionType>("buy");
   const [amountType, setAmountType] = useState<AmountType>("coin");
   const [amount, setAmount] = useState("");
+  const [portfolio, setPortfolio] = useState(() => {
+    return JSON.parse(localStorage.getItem("portfolio") || '{"assets":[], "watchlist":[]}');
+  });
+
+  const calculateTotalHoldings = (cryptoId: string) => {
+    return portfolio.assets.reduce((total: number, asset: any) => {
+      if (asset.cryptoId === cryptoId) {
+        return total + asset.amount;
+      }
+      return total;
+    }, 0);
+  };
+
+  const calculatePNL = (cryptoId: string) => {
+    const assets = portfolio.assets.filter((asset: any) => asset.cryptoId === cryptoId);
+    const crypto = cryptos?.find(c => c.id === cryptoId);
+    if (!crypto || assets.length === 0) return 0;
+
+    return assets.reduce((total: number, asset: any) => {
+      const currentValue = crypto.current_price * asset.amount;
+      const initialValue = asset.buyPrice * asset.amount;
+      return total + (currentValue - initialValue);
+    }, 0);
+  };
 
   const handleTransaction = () => {
     if (!selectedCrypto || !amount) {
@@ -41,23 +67,44 @@ export default function WalletPage() {
     const totalUSD = amountType === "coin" 
       ? amountNum * crypto.current_price
       : amountNum;
+    
+    const coinAmount = amountType === "coin" 
+      ? amountNum 
+      : amountNum / crypto.current_price;
 
-    // Save transaction to portfolio
-    const portfolio = JSON.parse(localStorage.getItem("portfolio") || '{"assets":[], "watchlist":[]}');
+    if (transactionType === "sell") {
+      const currentHoldings = calculateTotalHoldings(selectedCrypto);
+      if (coinAmount > currentHoldings) {
+        toast({
+          title: "Error",
+          description: `Insufficient balance. You only have ${currentHoldings} ${crypto.symbol.toUpperCase()}`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    const newPortfolio = { ...portfolio };
     
     if (transactionType === "buy") {
-      portfolio.assets.push({
+      newPortfolio.assets.push({
         cryptoId: selectedCrypto,
-        amount: amountType === "coin" ? amountNum : amountNum / crypto.current_price,
+        amount: coinAmount,
         buyPrice: crypto.current_price,
         timestamp: Date.now()
       });
     } else {
-      // Implement sell logic here
-      // You would need to check if user has enough balance first
+      // Handle sell by adding a negative amount
+      newPortfolio.assets.push({
+        cryptoId: selectedCrypto,
+        amount: -coinAmount,
+        buyPrice: crypto.current_price,
+        timestamp: Date.now()
+      });
     }
 
-    localStorage.setItem("portfolio", JSON.stringify(portfolio));
+    setPortfolio(newPortfolio);
+    localStorage.setItem("portfolio", JSON.stringify(newPortfolio));
 
     toast({
       title: "Success",
@@ -68,8 +115,16 @@ export default function WalletPage() {
       }`,
     });
 
-    // Reset form
     setAmount("");
+  };
+
+  const isValidSellAmount = () => {
+    if (!selectedCrypto || !amount || transactionType !== "sell") return true;
+    const holdings = calculateTotalHoldings(selectedCrypto);
+    const sellAmount = amountType === "coin" 
+      ? parseFloat(amount)
+      : parseFloat(amount) / (cryptos?.find(c => c.id === selectedCrypto)?.current_price || 1);
+    return sellAmount <= holdings;
   };
 
   if (isLoading || !cryptos) {
@@ -78,12 +133,53 @@ export default function WalletPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
+      <Button 
+        variant="outline" 
+        onClick={() => navigate('/')}
+        className="mb-6"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Return to Home
+      </Button>
+
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-2">Crypto Wallet</h1>
         <p className="text-muted-foreground">Buy and sell cryptocurrencies</p>
       </div>
 
-      <Card className="glass max-w-2xl mx-auto">
+      {selectedCrypto && (
+        <Card className="glass mb-6">
+          <CardHeader>
+            <CardTitle>Holdings & PNL</CardTitle>
+            <CardDescription>Your current position</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Holdings</p>
+                <p className="text-2xl font-bold">
+                  {calculateTotalHoldings(selectedCrypto)} {cryptos.find(c => c.id === selectedCrypto)?.symbol.toUpperCase()}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total P/L</p>
+                <p className={`text-2xl font-bold flex items-center ${
+                  calculatePNL(selectedCrypto) >= 0 ? "text-green-500" : "text-red-500"
+                }`}>
+                  {calculatePNL(selectedCrypto) >= 0 ? (
+                    <TrendingUp className="w-5 h-5 mr-2" />
+                  ) : (
+                    <TrendingDown className="w-5 h-5 mr-2" />
+                  )}
+                  ${Math.abs(calculatePNL(selectedCrypto)).toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className={`glass ${!isValidSellAmount() ? "border-red-500" : ""}`}>
         <CardHeader>
           <CardTitle>Transaction</CardTitle>
           <CardDescription>Buy or sell cryptocurrencies</CardDescription>

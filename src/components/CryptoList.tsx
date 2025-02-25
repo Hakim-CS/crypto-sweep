@@ -59,8 +59,11 @@ export default function CryptoList({
           <Button
             variant="outline"
             size="icon"
-            className="absolute top-2 right-2"
-            onClick={() => handleAddToWatchlist(crypto)}
+            className="absolute top-2 left-2 z-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddToWatchlist(crypto);
+            }}
           >
             <Star
               className={`h-4 w-4 ${

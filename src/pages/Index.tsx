@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useCryptoData, useHistoricalData } from "@/hooks/useCryptoData";
 import { CryptoData, TimeFrame } from "@/lib/types";
@@ -9,8 +8,9 @@ import CompareView from "@/components/CompareView";
 import PortfolioManager from "@/components/PortfolioManager";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Wallet } from "lucide-react";
 import { useTheme } from "next-themes";
+import { Link } from "react-router-dom";
 
 export default function Index() {
   const { toast } = useToast();
@@ -67,7 +67,13 @@ export default function Index() {
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8 min-h-screen">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-between mb-4">
+        <Link to="/wallet">
+          <Button variant="outline" className="flex items-center gap-2">
+            <Wallet className="h-4 w-4" />
+            Wallet
+          </Button>
+        </Link>
         <Button
           variant="outline"
           size="icon"

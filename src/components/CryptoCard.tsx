@@ -7,14 +7,17 @@ interface CryptoCardProps {
   crypto: CryptoData;
   onClick?: () => void;
   className?: string;
+  selected?: boolean;
 }
 
-export default function CryptoCard({ crypto, onClick, className = "" }: CryptoCardProps) {
+export default function CryptoCard({ crypto, onClick, className = "", selected = false }: CryptoCardProps) {
   const isPositive = crypto.price_change_percentage_24h > 0;
 
   return (
     <Card
-      className={`p-4 cursor-pointer hover:scale-[1.02] transition-all duration-200 glass ${className}`}
+      className={`p-4 cursor-pointer hover:scale-[1.02] transition-all duration-200 glass ${
+        selected ? "ring-2 ring-primary" : ""
+      } ${className}`}
       onClick={onClick}
     >
       <div className="flex items-center space-x-4">

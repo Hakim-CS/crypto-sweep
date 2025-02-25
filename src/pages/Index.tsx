@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useCryptoData, useHistoricalData } from "@/hooks/useCryptoData";
 import { CryptoData, TimeFrame } from "@/lib/types";
@@ -5,7 +6,6 @@ import SearchBar from "@/components/SearchBar";
 import CryptoList from "@/components/CryptoList";
 import PriceChart from "@/components/PriceChart";
 import CompareView from "@/components/CompareView";
-import PortfolioManager from "@/components/PortfolioManager";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Wallet } from "lucide-react";
@@ -93,12 +93,7 @@ export default function Index() {
         </p>
       </div>
 
-      <SearchBar
-        cryptoList={cryptos}
-        onSearch={handleSearch}
-      />
-
-      <PortfolioManager cryptoList={cryptos} />
+      <SearchBar cryptoList={cryptos} onSearch={handleSearch} />
 
       {selectedCryptos[0] && (
         <PriceChart

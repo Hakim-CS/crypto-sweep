@@ -1,5 +1,5 @@
 
-import { CryptoCard } from "./CryptoCard";
+import CryptoCard from "./CryptoCard";
 import { CryptoData } from "@/lib/types";
 import { useState } from "react";
 import { Button } from "./ui/button";

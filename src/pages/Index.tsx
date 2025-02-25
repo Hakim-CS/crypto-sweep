@@ -6,6 +6,7 @@ import SearchBar from "@/components/SearchBar";
 import CryptoList from "@/components/CryptoList";
 import PriceChart from "@/components/PriceChart";
 import CompareView from "@/components/CompareView";
+import PortfolioManager from "@/components/PortfolioManager";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
@@ -90,6 +91,8 @@ export default function Index() {
         cryptoList={cryptos}
         onSearch={handleSearch}
       />
+
+      <PortfolioManager cryptoList={cryptos} />
 
       {selectedCryptos[0] && (
         <PriceChart

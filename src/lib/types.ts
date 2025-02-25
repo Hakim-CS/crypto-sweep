@@ -37,3 +37,41 @@ export interface TechnicalIndicator {
   interpretation: 'bullish' | 'bearish' | 'neutral';
   description: string;
 }
+
+export interface PortfolioAsset {
+  cryptoId: string;
+  amount: number;
+  buyPrice: number;
+  timestamp: number;
+}
+
+export interface WatchlistItem {
+  cryptoId: string;
+  priceAlert?: {
+    above?: number;
+    below?: number;
+  };
+}
+
+export interface Portfolio {
+  assets: PortfolioAsset[];
+  watchlist: WatchlistItem[];
+}
+
+export interface ChartPreferences {
+  type: 'line' | 'candlestick' | 'bar';
+  showVolume: boolean;
+  showIndicators: {
+    rsi: boolean;
+    sma: boolean;
+    ema: boolean;
+  };
+}
+
+export interface DashboardLayout {
+  sections: {
+    id: string;
+    type: 'portfolio' | 'watchlist' | 'chart' | 'metrics';
+    position: { x: number; y: number };
+  }[];
+}

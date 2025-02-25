@@ -2,7 +2,7 @@
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/585451d7-4de4-4e7c-8fb7-dcb8f3d91547
+**URL**: https://preview--crypto-sweep.lovable.app/
 
 ## How can I edit this code?
 

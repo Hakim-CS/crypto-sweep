@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useCryptoData } from "@/hooks/useCryptoData";
 import { useToast } from "@/components/ui/use-toast";
@@ -16,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpCircle, ArrowDownCircle, Wallet, ArrowLeft } from "lucide-react";
 import HoldingsList from "@/components/HoldingsList";
 import WatchlistCard from "@/components/WatchlistCard";
+import { supabase } from "@/lib/supabase";
 
 type TransactionType = "buy" | "sell";
 type AmountType = "coin" | "usd";
@@ -62,7 +62,46 @@ export default function WalletPage() {
     }, 0);
   };
 
-  const handleTransaction = () => {
+  // Update to use Supabase for portfolio data
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      if (!user?.id) return;
+
+      const { data, error } = await supabase
+        .from('portfolios')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        toast({
+          title: "Error",
+          description: "Failed to fetch portfolio data",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data) {
+        setPortfolio(data);
+      } else {
+        // Create new portfolio for user
+        const newPortfolio = { assets: [], watchlist: [], user_id: user.id };
+        const { error: insertError } = await supabase
+          .from('portfolios')
+          .insert(newPortfolio);
+
+        if (!insertError) {
+          setPortfolio(newPortfolio);
+        }
+      }
+    };
+
+    fetchPortfolio();
+  }, [user?.id]);
+
+  // Update transaction handler to use Supabase
+  const handleTransaction = async () => {
     if (!user?.id) {
       toast({
         title: "Error",
@@ -105,38 +144,61 @@ export default function WalletPage() {
       }
     }
 
-    const newPortfolio = { ...portfolio };
-    
-    if (transactionType === "buy") {
-      newPortfolio.assets.push({
-        cryptoId: selectedCrypto,
-        amount: coinAmount,
-        buyPrice: crypto.current_price,
-        timestamp: Date.now()
+    // Create transaction record
+    const transaction = {
+      user_id: user.id,
+      crypto_id: selectedCrypto,
+      amount: transactionType === "sell" ? -coinAmount : coinAmount,
+      price: crypto.current_price,
+      type: transactionType,
+      timestamp: new Date().toISOString()
+    };
+
+    // Insert transaction into Supabase
+    const { error: transactionError } = await supabase
+      .from('transactions')
+      .insert(transaction);
+
+    if (transactionError) {
+      toast({
+        title: "Error",
+        description: "Failed to process transaction",
+        variant: "destructive",
       });
-    } else {
-      // Handle sell by adding a negative amount
-      newPortfolio.assets.push({
-        cryptoId: selectedCrypto,
-        amount: -coinAmount,
-        buyPrice: crypto.current_price,
-        timestamp: Date.now()
-      });
+      return;
     }
 
-    setPortfolio(newPortfolio);
-    localStorage.setItem(`portfolio_${user?.id}`, JSON.stringify(newPortfolio));
+    // Update portfolio in state and Supabase
+    const newPortfolio = {
+      ...portfolio,
+      assets: [
+        ...portfolio.assets,
+        {
+          cryptoId: selectedCrypto,
+          amount: transactionType === "sell" ? -coinAmount : coinAmount,
+          buyPrice: crypto.current_price,
+          timestamp: Date.now()
+        }
+      ]
+    };
 
-    toast({
-      title: "Success",
-      description: `Successfully ${transactionType === "buy" ? "bought" : "sold"} ${
-        amountType === "coin" 
-          ? `${amountNum} ${crypto.symbol.toUpperCase()}`
-          : `$${amountNum} of ${crypto.symbol.toUpperCase()}`
-      }`,
-    });
+    const { error: portfolioError } = await supabase
+      .from('portfolios')
+      .update(newPortfolio)
+      .eq('user_id', user.id);
 
-    setAmount("");
+    if (!portfolioError) {
+      setPortfolio(newPortfolio);
+      toast({
+        title: "Success",
+        description: `Successfully ${transactionType === "buy" ? "bought" : "sold"} ${
+          amountType === "coin" 
+            ? `${amountNum} ${crypto.symbol.toUpperCase()}`
+            : `$${amountNum} of ${crypto.symbol.toUpperCase()}`
+        }`,
+      });
+      setAmount("");
+    }
   };
 
   const isValidSellAmount = () => {
@@ -148,13 +210,23 @@ export default function WalletPage() {
     return sellAmount <= holdings;
   };
 
-  const handleUpdateWatchlist = (newWatchlist: Array<{ cryptoId: string }>) => {
+  // Update watchlist handler to use Supabase
+  const handleUpdateWatchlist = async (newWatchlist: Array<{ cryptoId: string }>) => {
+    if (!user?.id) return;
+
     const newPortfolio = {
       ...portfolio,
       watchlist: newWatchlist
     };
-    setPortfolio(newPortfolio);
-    localStorage.setItem(`portfolio_${user?.id}`, JSON.stringify(newPortfolio));
+
+    const { error } = await supabase
+      .from('portfolios')
+      .update(newPortfolio)
+      .eq('user_id', user.id);
+
+    if (!error) {
+      setPortfolio(newPortfolio);
+    }
   };
 
   const isAdmin = user?.publicMetadata?.role === 'admin';

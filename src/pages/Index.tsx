@@ -87,7 +87,7 @@ export default function Index() {
       </div>
 
       <div className="text-center mb-12 slide-in">
-        <h1 className="text-4xl font-bold mb-2">Crypto sweeper</h1>
+        <h1 className="text-4xl font-bold mb-2">Qul Ba Qul Crypto Ve Arkadaşlaru</h1>
         <p className="text-muted-foreground">
           Track and compare cryptocurrency prices in real-time
         </p>

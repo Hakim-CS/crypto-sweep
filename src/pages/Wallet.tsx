@@ -1,7 +1,9 @@
+<lov-codelov-code>
 import { useState, useEffect } from "react";
 import { useCryptoData } from "@/hooks/useCryptoData";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@clerk/clerk-react";
 import {
   Card,
   CardContent,
@@ -21,14 +23,23 @@ type AmountType = "coin" | "usd";
 export default function WalletPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useUser();
   const { data: cryptos, isLoading } = useCryptoData();
   const [selectedCrypto, setSelectedCrypto] = useState("");
   const [transactionType, setTransactionType] = useState<TransactionType>("buy");
   const [amountType, setAmountType] = useState<AmountType>("coin");
   const [amount, setAmount] = useState("");
   const [portfolio, setPortfolio] = useState(() => {
-    return JSON.parse(localStorage.getItem("portfolio") || '{"assets":[], "watchlist":[]}');
+    const userId = user?.id || 'anonymous';
+    return JSON.parse(localStorage.getItem(`portfolio_${userId}`) || '{"assets":[], "watchlist":[]}');
   });
+
+  // Save portfolio with user ID
+  useEffect(() => {
+    if (user?.id) {
+      localStorage.setItem(`portfolio_${user.id}`, JSON.stringify(portfolio));
+    }
+  }, [portfolio, user?.id]);
 
   const calculateTotalHoldings = (cryptoId: string) => {
     return portfolio.assets.reduce((total: number, asset: any) => {
@@ -52,6 +63,15 @@ export default function WalletPage() {
   };
 
   const handleTransaction = () => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be signed in to make transactions",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!selectedCrypto || !amount) {
       toast({
         title: "Error",
@@ -105,7 +125,7 @@ export default function WalletPage() {
     }
 
     setPortfolio(newPortfolio);
-    localStorage.setItem("portfolio", JSON.stringify(newPortfolio));
+    localStorage.setItem(`portfolio_${user?.id}`, JSON.stringify(newPortfolio));
 
     toast({
       title: "Success",
@@ -134,8 +154,10 @@ export default function WalletPage() {
       watchlist: newWatchlist
     };
     setPortfolio(newPortfolio);
-    localStorage.setItem("portfolio", JSON.stringify(newPortfolio));
+    localStorage.setItem(`portfolio_${user?.id}`, JSON.stringify(newPortfolio));
   };
+
+  const isAdmin = user?.publicMetadata?.role === 'admin';
 
   if (isLoading || !cryptos) {
     return <div>Loading...</div>;
@@ -153,9 +175,27 @@ export default function WalletPage() {
       </Button>
 
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-2">Crypto Wallet</h1>
-        <p className="text-muted-foreground">Manage your portfolio and watchlist</p>
+        <h1 className="text-4xl font-bold mb-2">
+          {isAdmin ? 'Admin Wallet Dashboard' : 'Crypto Wallet'}
+        </h1>
+        <p className="text-muted-foreground">
+          {isAdmin ? 'Manage all portfolios and watchlists' : 'Manage your portfolio and watchlist'}
+        </p>
       </div>
+
+      {isAdmin && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Admin Controls</CardTitle>
+            <CardDescription>Manage user roles and permissions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Admin features coming soon: User management, role assignment, and transaction history
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <HoldingsList assets={portfolio.assets} cryptos={cryptos} />
@@ -265,3 +305,4 @@ export default function WalletPage() {
     </div>
   );
 }
+</lov-code>

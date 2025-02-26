@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useCryptoData } from "@/hooks/useCryptoData";
 import { useToast } from "@/components/ui/use-toast";
@@ -13,6 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowUpCircle, ArrowDownCircle, Wallet, ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
+import HoldingsList from "@/components/HoldingsList";
+import WatchlistCard from "@/components/WatchlistCard";
 
 type TransactionType = "buy" | "sell";
 type AmountType = "coin" | "usd";
@@ -127,6 +128,15 @@ export default function WalletPage() {
     return sellAmount <= holdings;
   };
 
+  const handleUpdateWatchlist = (newWatchlist: Array<{ cryptoId: string }>) => {
+    const newPortfolio = {
+      ...portfolio,
+      watchlist: newWatchlist
+    };
+    setPortfolio(newPortfolio);
+    localStorage.setItem("portfolio", JSON.stringify(newPortfolio));
+  };
+
   if (isLoading || !cryptos) {
     return <div>Loading...</div>;
   }
@@ -144,40 +154,17 @@ export default function WalletPage() {
 
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-2">Crypto Wallet</h1>
-        <p className="text-muted-foreground">Buy and sell cryptocurrencies</p>
+        <p className="text-muted-foreground">Manage your portfolio and watchlist</p>
       </div>
 
-      {selectedCrypto && (
-        <Card className="glass mb-6">
-          <CardHeader>
-            <CardTitle>Holdings & PNL</CardTitle>
-            <CardDescription>Your current position</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Holdings</p>
-                <p className="text-2xl font-bold">
-                  {calculateTotalHoldings(selectedCrypto)} {cryptos.find(c => c.id === selectedCrypto)?.symbol.toUpperCase()}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total P/L</p>
-                <p className={`text-2xl font-bold flex items-center ${
-                  calculatePNL(selectedCrypto) >= 0 ? "text-green-500" : "text-red-500"
-                }`}>
-                  {calculatePNL(selectedCrypto) >= 0 ? (
-                    <TrendingUp className="w-5 h-5 mr-2" />
-                  ) : (
-                    <TrendingDown className="w-5 h-5 mr-2" />
-                  )}
-                  ${Math.abs(calculatePNL(selectedCrypto)).toFixed(2)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <HoldingsList assets={portfolio.assets} cryptos={cryptos} />
+        <WatchlistCard 
+          watchlist={portfolio.watchlist} 
+          cryptos={cryptos}
+          onUpdateWatchlist={handleUpdateWatchlist}
+        />
+      </div>
 
       <Card className={`glass ${!isValidSellAmount() ? "border-red-500" : ""}`}>
         <CardHeader>

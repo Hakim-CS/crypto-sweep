@@ -1,4 +1,4 @@
-<lov-codelov-code>
+
 import { useState, useEffect } from "react";
 import { useCryptoData } from "@/hooks/useCryptoData";
 import { useToast } from "@/components/ui/use-toast";
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpCircle, ArrowDownCircle, Wallet, ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, Wallet, ArrowLeft } from "lucide-react";
 import HoldingsList from "@/components/HoldingsList";
 import WatchlistCard from "@/components/WatchlistCard";
 
@@ -305,4 +305,3 @@ export default function WalletPage() {
     </div>
   );
 }
-</lov-code>

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CryptoData } from "@/lib/types";
 import CryptoCard from "./CryptoCard";
 import SearchBar from "./SearchBar";
@@ -30,7 +30,7 @@ export default function CryptoList({
   const [isLoading, setIsLoading] = useState(true);
 
   // Load watchlist when component mounts and user is signed in
-  useState(() => {
+  useEffect(() => {
     const fetchWatchlist = async () => {
       if (!isSignedIn || !user) {
         setIsLoading(false);
@@ -119,11 +119,12 @@ export default function CryptoList({
     }
   };
 
-  const sortedAndFilteredCryptos = [...cryptos]
-    .filter(crypto => 
-      crypto.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      crypto.symbol.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+  const filteredCryptos = cryptos.filter(crypto => 
+    crypto.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    crypto.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const sortedAndFilteredCryptos = [...filteredCryptos]
     .sort((a, b) => {
       let comparison = 0;
       
@@ -161,11 +162,17 @@ export default function CryptoList({
     }
   };
 
+  const handleClearComparison = () => {
+    if (onSelectCrypto) {
+      onSelectCrypto(null as any);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <SearchBar 
         searchTerm={searchTerm} 
-        onSearch={setSearchTerm} 
+        onSearch={setSearchTerm}
         sortBy={sortBy}
         sortDir={sortDir}
         onSort={handleSort}
@@ -174,7 +181,8 @@ export default function CryptoList({
       {selectedCryptos[0] && selectedCryptos[1] && (
         <CompareView 
           crypto1={selectedCryptos[0]} 
-          crypto2={selectedCryptos[1]} 
+          crypto2={selectedCryptos[1]}
+          onClearComparison={handleClearComparison}
         />
       )}
       
@@ -199,8 +207,8 @@ export default function CryptoList({
             <CryptoCard 
               crypto={crypto} 
               onClick={onSelectCrypto ? () => onSelectCrypto(crypto) : undefined}
-              isSelected={isInSelectedCryptos(crypto)}
-              isCompareMode={isCompareMode}
+              selected={isInSelectedCryptos(crypto)}
+              className={isCompareMode ? "cursor-pointer" : ""}
             />
           </div>
         ))}

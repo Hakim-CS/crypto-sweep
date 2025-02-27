@@ -11,19 +11,58 @@ export type Database = {
     Tables: {
       portfolios: {
         Row: {
-          created_at: string
+          assets: Json | null
+          balance: number | null
+          created_at: string | null
           id: number
-          transactions: number
+          user_id: string
+          watchlist: Json | null
         }
         Insert: {
-          created_at?: string
+          assets?: Json | null
+          balance?: number | null
+          created_at?: string | null
           id?: number
-          transactions?: number
+          user_id: string
+          watchlist?: Json | null
         }
         Update: {
-          created_at?: string
+          assets?: Json | null
+          balance?: number | null
+          created_at?: string | null
           id?: number
-          transactions?: number
+          user_id?: string
+          watchlist?: Json | null
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          crypto_id: string | null
+          id: number
+          price: number | null
+          timestamp: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          crypto_id?: string | null
+          id?: number
+          price?: number | null
+          timestamp?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          crypto_id?: string | null
+          id?: number
+          price?: number | null
+          timestamp?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }

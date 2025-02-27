@@ -8,18 +8,27 @@ import { useCryptoData } from "@/hooks/useCryptoData";
 import { useState } from "react";
 import { CryptoData } from "@/lib/types";
 import { useToast } from "@/components/ui/use-toast";
+import PriceChart from "@/components/PriceChart";
 
 export default function Index() {
   const navigate = useNavigate();
   const { isSignedIn, user } = useUser();
   const { data: cryptos, isLoading } = useCryptoData();
   const [selectedCryptos, setSelectedCryptos] = useState<[CryptoData | null, CryptoData | null]>([null, null]);
+  const [selectedCoin, setSelectedCoin] = useState<CryptoData | null>(null);
   const { toast } = useToast();
   const isAdmin = user?.publicMetadata?.role === 'admin';
 
-  const handleSelectCrypto = (crypto: CryptoData) => {
+  const handleSelectCrypto = (crypto: CryptoData | null) => {
     if (!crypto) {
       setSelectedCryptos([null, null]);
+      setSelectedCoin(null);
+      return;
+    }
+
+    // If we're not in compare mode and it's a regular click
+    if (!selectedCryptos[0] && !selectedCryptos[1]) {
+      setSelectedCoin(crypto);
       return;
     }
 
@@ -54,6 +63,8 @@ export default function Index() {
     return <div>Loading...</div>;
   }
 
+  const isCompareMode = selectedCryptos[0] !== null || selectedCryptos[1] !== null;
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-8">
@@ -75,6 +86,19 @@ export default function Index() {
           </Button>
         )}
       </div>
+
+      {selectedCoin && !isCompareMode && (
+        <div className="mb-8">
+          <Button 
+            variant="outline" 
+            onClick={() => setSelectedCoin(null)}
+            className="mb-4"
+          >
+            Back to List
+          </Button>
+          <PriceChart cryptoId={selectedCoin.id} />
+        </div>
+      )}
 
       <CryptoList
         cryptos={cryptos}

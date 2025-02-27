@@ -60,7 +60,7 @@ export default function CryptoList({
   }, [isSignedIn, user]);
 
   const toggleWatchlist = async (crypto: CryptoData) => {
-    if (!isSignedIn) {
+    if (!isSignedIn || !user) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to add cryptocurrencies to your watchlist",
@@ -90,14 +90,11 @@ export default function CryptoList({
         });
       }
 
-      // Update watchlist in state
-      setWatchlist(newWatchlist);
-
-      // Update watchlist in database
+      // Update watchlist in database first
       const { error } = await supabase
         .from('portfolios')
         .update({ watchlist: newWatchlist })
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error updating watchlist:', error);
@@ -106,9 +103,11 @@ export default function CryptoList({
           description: "Failed to update watchlist",
           variant: "destructive",
         });
-        // Revert state change
-        setWatchlist(watchlist);
+        return;
       }
+
+      // If database update successful, update local state
+      setWatchlist(newWatchlist);
     } catch (err) {
       console.error('Error in toggleWatchlist:', err);
       toast({
@@ -193,8 +192,9 @@ export default function CryptoList({
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-2 right-2 z-10"
+                className="absolute top-2 right-2 z-10 hover:bg-background/50"
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   toggleWatchlist(crypto);
                 }}
@@ -203,7 +203,7 @@ export default function CryptoList({
                 {isInWatchlist(crypto) ? (
                   <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                 ) : (
-                  <StarOff className="h-5 w-5" />
+                  <Star className="h-5 w-5" />
                 )}
               </Button>
             )}
@@ -211,7 +211,7 @@ export default function CryptoList({
               crypto={crypto} 
               onClick={onSelectCrypto ? () => onSelectCrypto(crypto) : undefined}
               selected={isInSelectedCryptos(crypto)}
-              className={isCompareMode ? "cursor-pointer" : ""}
+              className="cursor-pointer"
             />
           </div>
         ))}

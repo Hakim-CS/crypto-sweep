@@ -12,6 +12,7 @@ import SignUpPage from "./pages/SignUp";
 import AuthLayout from "./components/AuthLayout";
 import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
+import ThemeToggle from "./components/ThemeToggle";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ function Navigation() {
 
   return (
     <div className="fixed top-4 right-4 flex items-center gap-4">
+      <ThemeToggle />
       {isSignedIn ? (
         <UserButton afterSignOutUrl="/" />
       ) : (

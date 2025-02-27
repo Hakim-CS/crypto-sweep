@@ -20,7 +20,9 @@ import {
   ArrowLeft, 
   PlusCircle, 
   MinusCircle, 
-  DollarSign 
+  DollarSign,
+  BarChart4,
+  CreditCard
 } from "lucide-react";
 import HoldingsList from "@/components/HoldingsList";
 import WatchlistCard from "@/components/WatchlistCard";
@@ -51,7 +53,7 @@ export default function WalletPage() {
     watchlist: [],
     balance: 1000
   });
-  const [activeTab, setActiveTab] = useState("trade");
+  const [activeTab, setActiveTab] = useState("overview");
   const [isLoading2, setIsLoading2] = useState(true);
 
   // Fetch portfolio from Supabase
@@ -222,15 +224,15 @@ export default function WalletPage() {
       }
 
       // Update portfolio assets
-      const newAssets = [
-        ...portfolio.assets,
-        {
-          cryptoId: selectedCrypto,
-          amount: transactionType === "sell" ? -coinAmount : coinAmount,
-          buyPrice: crypto.current_price,
-          timestamp: Date.now()
-        }
-      ];
+      let newAssets = [...(portfolio.assets || [])];
+      
+      // Add the new transaction to assets
+      newAssets.push({
+        cryptoId: selectedCrypto,
+        amount: transactionType === "sell" ? -coinAmount : coinAmount,
+        buyPrice: crypto.current_price,
+        timestamp: Date.now()
+      });
 
       // Update portfolio balance
       const newBalance = transactionType === "buy"
@@ -557,30 +559,43 @@ export default function WalletPage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <HoldingsList assets={portfolio.assets || []} cryptos={cryptos} />
-        <WatchlistCard 
-          watchlist={portfolio.watchlist || []} 
-          cryptos={cryptos}
-          onUpdateWatchlist={handleUpdateWatchlist}
-        />
-      </div>
-
-      <Card className="glass">
-        <CardHeader>
-          <CardTitle>Transactions</CardTitle>
-          <CardDescription>Manage your crypto and fiat transactions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="trade" onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="trade">Trade Crypto</TabsTrigger>
-              <TabsTrigger value="fiat">Deposit/Withdraw</TabsTrigger>
-            </TabsList>
-            
-            {/* Trade Tab */}
-            <TabsContent value="trade" className="space-y-6">
-              <div className="flex gap-4 mt-4">
+      <Tabs defaultValue="overview" onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">
+            <BarChart4 className="w-4 h-4 mr-2" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="trade">
+            <Wallet className="w-4 h-4 mr-2" />
+            Trade
+          </TabsTrigger>
+          <TabsTrigger value="funds">
+            <CreditCard className="w-4 h-4 mr-2" />
+            Funds
+          </TabsTrigger>
+        </TabsList>
+        
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <HoldingsList assets={portfolio.assets || []} cryptos={cryptos} />
+            <WatchlistCard 
+              watchlist={portfolio.watchlist || []} 
+              cryptos={cryptos}
+              onUpdateWatchlist={handleUpdateWatchlist}
+            />
+          </div>
+        </TabsContent>
+        
+        {/* Trade Tab */}
+        <TabsContent value="trade" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Trade Cryptocurrencies</CardTitle>
+              <CardDescription>Buy and sell cryptocurrencies in your portfolio</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex gap-4">
                 <Button
                   variant={transactionType === "buy" ? "default" : "outline"}
                   onClick={() => setTransactionType("buy")}
@@ -668,90 +683,92 @@ export default function WalletPage() {
                   {selectedCrypto && ` ${cryptos.find(c => c.id === selectedCrypto)?.symbol.toUpperCase()}`}
                 </Button>
               </div>
-            </TabsContent>
+            </CardContent>
+          </Card>
+        </TabsContent>
             
-            {/* Deposit/Withdraw Tab */}
-            <TabsContent value="fiat" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                {/* Deposit Card */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <PlusCircle className="w-5 h-5 mr-2 text-green-500" />
-                      Deposit
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium">Amount (USD)</label>
-                      <div className="relative mt-1">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        </span>
-                        <Input
-                          type="number"
-                          placeholder="Enter amount"
-                          value={depositAmount}
-                          onChange={(e) => setDepositAmount(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      className="w-full bg-green-600 hover:bg-green-700"
-                      onClick={handleDeposit}
-                      disabled={!depositAmount || parseFloat(depositAmount) <= 0}
-                    >
-                      <PlusCircle className="w-4 h-4 mr-2" />
-                      Deposit Funds
-                    </Button>
-                  </CardContent>
-                </Card>
+        {/* Funds Tab */}
+        <TabsContent value="funds" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Deposit Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <PlusCircle className="w-5 h-5 mr-2 text-green-500" />
+                  Deposit
+                </CardTitle>
+                <CardDescription>Add funds to your account</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Amount (USD)</label>
+                  <div className="relative mt-1">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </span>
+                    <Input
+                      type="number"
+                      placeholder="Enter amount"
+                      value={depositAmount}
+                      onChange={(e) => setDepositAmount(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  onClick={handleDeposit}
+                  disabled={!depositAmount || parseFloat(depositAmount) <= 0}
+                >
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Deposit Funds
+                </Button>
+              </CardContent>
+            </Card>
 
-                {/* Withdraw Card */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <MinusCircle className="w-5 h-5 mr-2 text-red-500" />
-                      Withdraw
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium">Amount (USD)</label>
-                      <div className="relative mt-1">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        </span>
-                        <Input
-                          type="number"
-                          placeholder="Enter amount"
-                          value={withdrawAmount}
-                          onChange={(e) => setWithdrawAmount(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      variant="destructive"
-                      className="w-full"
-                      onClick={handleWithdraw}
-                      disabled={
-                        !withdrawAmount || 
-                        parseFloat(withdrawAmount) <= 0 || 
-                        parseFloat(withdrawAmount) > (portfolio.balance || 0)
-                      }
-                    >
-                      <MinusCircle className="w-4 h-4 mr-2" />
-                      Withdraw Funds
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+            {/* Withdraw Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <MinusCircle className="w-5 h-5 mr-2 text-red-500" />
+                  Withdraw
+                </CardTitle>
+                <CardDescription>Withdraw funds from your account</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Amount (USD)</label>
+                  <div className="relative mt-1">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </span>
+                    <Input
+                      type="number"
+                      placeholder="Enter amount"
+                      value={withdrawAmount}
+                      onChange={(e) => setWithdrawAmount(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={handleWithdraw}
+                  disabled={
+                    !withdrawAmount || 
+                    parseFloat(withdrawAmount) <= 0 || 
+                    parseFloat(withdrawAmount) > (portfolio.balance || 0)
+                  }
+                >
+                  <MinusCircle className="w-4 h-4 mr-2" />
+                  Withdraw Funds
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

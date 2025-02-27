@@ -162,42 +162,58 @@ export default function WalletPage() {
       return;
     }
 
-    const crypto = cryptos?.find(c => c.id === selectedCrypto);
-    if (!crypto) return;
-
-    const amountNum = parseFloat(amount);
-    const totalUSD = amountType === "coin" 
-      ? amountNum * crypto.current_price
-      : amountNum;
-    
-    const coinAmount = amountType === "coin" 
-      ? amountNum 
-      : amountNum / crypto.current_price;
-
-    // Check if user has enough balance for buying
-    if (transactionType === "buy" && totalUSD > portfolio.balance) {
-      toast({
-        title: "Error",
-        description: `Insufficient balance. You only have $${portfolio.balance.toFixed(2)}`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if user has enough crypto for selling
-    if (transactionType === "sell") {
-      const currentHoldings = calculateTotalHoldings(selectedCrypto);
-      if (coinAmount > currentHoldings) {
+    try {
+      const crypto = cryptos?.find(c => c.id === selectedCrypto);
+      if (!crypto) {
         toast({
           title: "Error",
-          description: `Insufficient balance. You only have ${currentHoldings} ${crypto.symbol.toUpperCase()}`,
+          description: "Selected cryptocurrency not found",
           variant: "destructive",
         });
         return;
       }
-    }
-
-    try {
+  
+      const amountNum = parseFloat(amount);
+      if (isNaN(amountNum) || amountNum <= 0) {
+        toast({
+          title: "Error",
+          description: "Please enter a valid amount",
+          variant: "destructive",
+        });
+        return;
+      }
+  
+      const totalUSD = amountType === "coin" 
+        ? amountNum * crypto.current_price
+        : amountNum;
+      
+      const coinAmount = amountType === "coin" 
+        ? amountNum 
+        : amountNum / crypto.current_price;
+  
+      // Check if user has enough balance for buying
+      if (transactionType === "buy" && totalUSD > portfolio.balance) {
+        toast({
+          title: "Error",
+          description: `Insufficient balance. You only have $${portfolio.balance.toFixed(2)}`,
+          variant: "destructive",
+        });
+        return;
+      }
+  
+      // Check if user has enough crypto for selling
+      if (transactionType === "sell") {
+        const currentHoldings = calculateTotalHoldings(selectedCrypto);
+        if (coinAmount > currentHoldings) {
+          toast({
+            title: "Error",
+            description: `Insufficient balance. You only have ${currentHoldings} ${crypto.symbol.toUpperCase()}`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+  
       // Create transaction record
       const transaction = {
         user_id: user.id,
@@ -207,12 +223,12 @@ export default function WalletPage() {
         type: transactionType,
         timestamp: new Date().toISOString()
       };
-
+  
       // Insert transaction into Supabase
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert(transaction);
-
+  
       if (transactionError) {
         console.error('Transaction error:', transactionError);
         toast({
@@ -222,35 +238,35 @@ export default function WalletPage() {
         });
         return;
       }
-
+  
       // Update portfolio assets
-      let newAssets = [...(portfolio.assets || [])];
-      
-      // Add the new transaction to assets
-      newAssets.push({
+      const newAsset = {
         cryptoId: selectedCrypto,
         amount: transactionType === "sell" ? -coinAmount : coinAmount,
         buyPrice: crypto.current_price,
         timestamp: Date.now()
-      });
-
+      };
+  
       // Update portfolio balance
       const newBalance = transactionType === "buy"
         ? portfolio.balance - totalUSD
         : portfolio.balance + totalUSD;
-
+  
       // Update portfolio in state and Supabase
       const updatedPortfolio = {
         ...portfolio,
-        assets: newAssets,
+        assets: [...(portfolio.assets || []), newAsset],
         balance: newBalance
       };
-
+  
       const { error: portfolioError } = await supabase
         .from('portfolios')
-        .update(updatedPortfolio)
+        .update({
+          assets: updatedPortfolio.assets,
+          balance: updatedPortfolio.balance
+        })
         .eq('user_id', user.id);
-
+  
       if (portfolioError) {
         console.error('Portfolio update error:', portfolioError);
         toast({
@@ -260,7 +276,7 @@ export default function WalletPage() {
         });
         return;
       }
-
+  
       setPortfolio(updatedPortfolio);
       toast({
         title: "Success",
@@ -338,7 +354,7 @@ export default function WalletPage() {
 
       const { error: portfolioError } = await supabase
         .from('portfolios')
-        .update(updatedPortfolio)
+        .update({ balance: newBalance })
         .eq('user_id', user.id);
 
       if (portfolioError) {
@@ -434,7 +450,7 @@ export default function WalletPage() {
 
       const { error: portfolioError } = await supabase
         .from('portfolios')
-        .update(updatedPortfolio)
+        .update({ balance: newBalance })
         .eq('user_id', user.id);
 
       if (portfolioError) {
@@ -484,7 +500,7 @@ export default function WalletPage() {
 
       const { error } = await supabase
         .from('portfolios')
-        .update(updatedPortfolio)
+        .update({ watchlist: newWatchlist })
         .eq('user_id', user.id);
 
       if (error) {
@@ -674,7 +690,7 @@ export default function WalletPage() {
                 )}
 
                 <Button
-                  className={`w-full ${!isValidSellAmount() ? "bg-red-500" : ""}`}
+                  className="w-full"
                   onClick={handleTransaction}
                   disabled={!selectedCrypto || !amount || !isValidSellAmount()}
                 >

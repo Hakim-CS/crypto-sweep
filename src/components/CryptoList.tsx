@@ -194,7 +194,10 @@ export default function CryptoList({
                 variant="ghost"
                 size="icon"
                 className="absolute top-2 right-2 z-10"
-                onClick={() => toggleWatchlist(crypto)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleWatchlist(crypto);
+                }}
                 title={isInWatchlist(crypto) ? "Remove from watchlist" : "Add to watchlist"}
               >
                 {isInWatchlist(crypto) ? (

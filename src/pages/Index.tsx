@@ -18,6 +18,11 @@ export default function Index() {
   const isAdmin = user?.publicMetadata?.role === 'admin';
 
   const handleSelectCrypto = (crypto: CryptoData) => {
+    if (!crypto) {
+      setSelectedCryptos([null, null]);
+      return;
+    }
+
     setSelectedCryptos(prev => {
       // If the crypto is already selected, remove it
       if (prev[0]?.id === crypto.id) {

@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { CryptoData, ChartData, TimeFrame } from "@/lib/types";
 import { useToast } from "@/components/ui/use-toast";
 import PriceChart from "@/components/PriceChart";
+import { supabase } from "@/lib/supabase";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export default function Index() {
   const [timeFrame, setTimeFrame] = useState<TimeFrame>("24h");
   const { toast } = useToast();
   const isAdmin = user?.publicMetadata?.role === 'admin';
+  const [watchlist, setWatchlist] = useState<Array<{ cryptoId: string }>>([]);
   
   // Convert timeFrame to days for API request
   const timeFrameToDays = (tf: TimeFrame): number => {
@@ -36,6 +38,31 @@ export default function Index() {
     selectedCoin?.id || "",
     timeFrameToDays(timeFrame)
   );
+
+  // Fetch user's watchlist when signed in
+  useEffect(() => {
+    const fetchWatchlist = async () => {
+      if (!isSignedIn || !user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('portfolios')
+          .select('watchlist')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching watchlist:', error);
+        } else if (data) {
+          setWatchlist(data.watchlist || []);
+        }
+      } catch (err) {
+        console.error('Error in watchlist fetch:', err);
+      }
+    };
+
+    fetchWatchlist();
+  }, [isSignedIn, user]);
 
   // Update chart data when historical data is loaded
   useEffect(() => {
@@ -57,7 +84,7 @@ export default function Index() {
     }
 
     // If we're not in compare mode and it's a regular click
-    if (!selectedCryptos[0] && !selectedCryptos[1]) {
+    if (selectedCryptos[0] === null && selectedCryptos[1] === null) {
       setSelectedCoin(crypto);
       return;
     }
@@ -89,6 +116,131 @@ export default function Index() {
     });
   };
 
+  // Generate random data for portfolio and transactions
+  const generateRandomData = async () => {
+    if (!isSignedIn || !user || !cryptos || cryptos.length === 0) {
+      toast({
+        title: "Error",
+        description: "You must be signed in and cryptocurrencies must be loaded",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Get random cryptocurrencies (3-5)
+      const numRandomCryptos = Math.floor(Math.random() * 3) + 3; // 3-5 cryptos
+      const selectedRandomCryptos = [...cryptos]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, numRandomCryptos);
+      
+      // Create random assets for portfolio
+      const randomAssets = selectedRandomCryptos.map(crypto => ({
+        cryptoId: crypto.id,
+        amount: +(Math.random() * 10).toFixed(4),
+        buyPrice: crypto.current_price * (0.8 + Math.random() * 0.4), // +/- 20% of current price
+        timestamp: Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000) // Random time in last 30 days
+      }));
+
+      // Create random transactions
+      const randomTransactions = [];
+      for (const crypto of selectedRandomCryptos) {
+        const numTransactions = Math.floor(Math.random() * 5) + 1; // 1-5 transactions per crypto
+        
+        for (let i = 0; i < numTransactions; i++) {
+          const isBuy = Math.random() > 0.3; // 70% chance of buy
+          const amount = +(Math.random() * 5).toFixed(4);
+          const price = crypto.current_price * (0.7 + Math.random() * 0.6); // +/- 30% of current price
+          const daysAgo = Math.floor(Math.random() * 30);
+          
+          randomTransactions.push({
+            user_id: user.id,
+            crypto_id: crypto.id,
+            amount: isBuy ? amount : -amount,
+            price: price,
+            type: isBuy ? "buy" : "sell",
+            timestamp: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString()
+          });
+        }
+      }
+
+      // Add some random deposits/withdrawals
+      const numFundOperations = Math.floor(Math.random() * 3) + 2; // 2-4 operations
+      for (let i = 0; i < numFundOperations; i++) {
+        const isDeposit = Math.random() > 0.3; // 70% chance of deposit
+        const amount = +(Math.random() * 1000 + 100).toFixed(2); // $100-$1100
+        const daysAgo = Math.floor(Math.random() * 45);
+        
+        randomTransactions.push({
+          user_id: user.id,
+          crypto_id: null,
+          amount: isDeposit ? amount : -amount,
+          price: null,
+          type: isDeposit ? "deposit" : "withdraw",
+          timestamp: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString()
+        });
+      }
+
+      // Create random watchlist (2-4 cryptos)
+      const numWatchlistItems = Math.floor(Math.random() * 3) + 2;
+      const randomWatchlist = [...cryptos]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, numWatchlistItems)
+        .map(crypto => ({ cryptoId: crypto.id }));
+
+      // Calculate total balance based on deposits/withdrawals
+      const totalDeposits = randomTransactions
+        .filter(t => t.type === "deposit")
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+      
+      const totalWithdrawals = randomTransactions
+        .filter(t => t.type === "withdraw")
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+      
+      const calculatedBalance = 1000 + totalDeposits + totalWithdrawals;
+
+      // Update portfolio
+      const { error: portfolioError } = await supabase
+        .from('portfolios')
+        .upsert({
+          user_id: user.id,
+          assets: randomAssets,
+          watchlist: randomWatchlist,
+          balance: calculatedBalance > 0 ? calculatedBalance : 1000
+        });
+
+      if (portfolioError) {
+        console.error('Error updating portfolio:', portfolioError);
+        throw portfolioError;
+      }
+
+      // Insert transactions
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert(randomTransactions);
+
+      if (transactionError) {
+        console.error('Error adding transactions:', transactionError);
+        throw transactionError;
+      }
+
+      // Update local watchlist state
+      setWatchlist(randomWatchlist);
+
+      toast({
+        title: "Success",
+        description: `Added random data: ${randomAssets.length} assets, ${randomTransactions.length} transactions, and ${randomWatchlist.length} watchlist items`,
+      });
+    } catch (error) {
+      console.error('Error generating random data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate random data",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading || !cryptos) {
     return <div>Loading...</div>;
   }
@@ -106,15 +258,26 @@ export default function Index() {
             ? 'Track your portfolio and favorite cryptocurrencies'
             : 'Sign in to start managing your crypto portfolio'}
         </p>
-        {isSignedIn && (
-          <Button 
-            onClick={() => navigate('/wallet')} 
-            className="mb-8"
-          >
-            Go to Wallet
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        )}
+        <div className="flex gap-4 justify-center">
+          {isSignedIn && (
+            <>
+              <Button 
+                onClick={() => navigate('/wallet')} 
+                className="mb-8"
+              >
+                Go to Wallet
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              <Button 
+                onClick={generateRandomData} 
+                variant="outline"
+                className="mb-8"
+              >
+                Generate Test Data
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {selectedCoin && !isCompareMode && (
@@ -144,6 +307,8 @@ export default function Index() {
         cryptos={cryptos}
         onSelectCrypto={handleSelectCrypto}
         selectedCryptos={selectedCryptos}
+        watchlist={watchlist}
+        onUpdateWatchlist={setWatchlist}
       />
     </div>
   );

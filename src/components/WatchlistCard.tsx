@@ -32,7 +32,7 @@ export default function WatchlistCard({ watchlist, cryptos, onUpdateWatchlist }:
       const crypto = cryptos.find(c => c.id === item.cryptoId);
       return crypto ? { ...item, crypto } : null;
     })
-    .filter(item => item !== null);
+    .filter(item => item !== null) as Array<{ cryptoId: string; crypto: CryptoData }>;
 
   return (
     <Card className="glass">
@@ -50,8 +50,8 @@ export default function WatchlistCard({ watchlist, cryptos, onUpdateWatchlist }:
       <CardContent>
         <div className="space-y-4">
           {watchlistItems.length > 0 ? (
-            watchlistItems.map((item: any) => {
-              const crypto = item.crypto;
+            watchlistItems.map(item => {
+              const { crypto } = item;
               
               return (
                 <div key={crypto.id} className="flex items-center justify-between p-4 border rounded-lg">

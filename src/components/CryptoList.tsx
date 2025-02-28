@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { CryptoData } from "@/lib/types";
 import CryptoCard from "./CryptoCard";
 import SearchBar from "./SearchBar";
@@ -14,75 +14,22 @@ interface CryptoListProps {
   cryptos: CryptoData[];
   onSelectCrypto?: (crypto: CryptoData | null) => void;
   selectedCryptos?: [CryptoData | null, CryptoData | null];
+  watchlist?: Array<{ cryptoId: string }>;
+  onUpdateWatchlist?: (newWatchlist: Array<{ cryptoId: string }>) => void;
 }
 
 export default function CryptoList({ 
   cryptos, 
   onSelectCrypto,
-  selectedCryptos = [null, null]
+  selectedCryptos = [null, null],
+  watchlist = [],
+  onUpdateWatchlist
 }: CryptoListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"rank" | "name" | "price" | "change">("rank");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const { toast } = useToast();
   const { isSignedIn, user } = useUser();
-  const [watchlist, setWatchlist] = useState<Array<{ cryptoId: string }>>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Load watchlist when component mounts and user is signed in
-  useEffect(() => {
-    const fetchWatchlist = async () => {
-      if (!isSignedIn || !user) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        // First, try to find the existing portfolio
-        const { data: portfolio, error: fetchError } = await supabase
-          .from('portfolios')
-          .select('watchlist')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (fetchError) {
-          console.error('Error fetching watchlist:', fetchError);
-          toast({
-            title: "Error",
-            description: "Failed to load your watchlist",
-            variant: "destructive",
-          });
-        } else if (portfolio) {
-          // If portfolio exists, set the watchlist
-          setWatchlist(portfolio.watchlist || []);
-        } else {
-          // If portfolio doesn't exist, create one with empty watchlist
-          const { error: insertError } = await supabase
-            .from('portfolios')
-            .insert({
-              user_id: user.id,
-              watchlist: [],
-              assets: []
-            });
-
-          if (insertError) {
-            console.error('Error creating portfolio:', insertError);
-            toast({
-              title: "Error",
-              description: "Failed to create portfolio",
-              variant: "destructive",
-            });
-          }
-        }
-      } catch (err) {
-        console.error('Error in watchlist fetch:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchWatchlist();
-  }, [isSignedIn, user, toast]);
 
   const toggleWatchlist = async (crypto: CryptoData) => {
     if (!isSignedIn || !user) {
@@ -131,8 +78,10 @@ export default function CryptoList({
         return;
       }
 
-      // If database update successful, update local state
-      setWatchlist(newWatchlist);
+      // If database update successful, update parent component state
+      if (onUpdateWatchlist) {
+        onUpdateWatchlist(newWatchlist);
+      }
     } catch (err) {
       console.error('Error in toggleWatchlist:', err);
       toast({
@@ -188,7 +137,7 @@ export default function CryptoList({
 
   const handleClearComparison = () => {
     if (onSelectCrypto) {
-      onSelectCrypto(null as any);
+      onSelectCrypto(null);
     }
   };
 

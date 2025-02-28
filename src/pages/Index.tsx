@@ -6,7 +6,7 @@ import { ArrowRight } from "lucide-react";
 import CryptoList from "@/components/CryptoList";
 import { useCryptoData } from "@/hooks/useCryptoData";
 import { useState } from "react";
-import { CryptoData } from "@/lib/types";
+import { CryptoData, ChartData, TimeFrame } from "@/lib/types";
 import { useToast } from "@/components/ui/use-toast";
 import PriceChart from "@/components/PriceChart";
 
@@ -16,8 +16,36 @@ export default function Index() {
   const { data: cryptos, isLoading } = useCryptoData();
   const [selectedCryptos, setSelectedCryptos] = useState<[CryptoData | null, CryptoData | null]>([null, null]);
   const [selectedCoin, setSelectedCoin] = useState<CryptoData | null>(null);
+  const [chartData, setChartData] = useState<ChartData[]>([]);
+  const [timeFrame, setTimeFrame] = useState<TimeFrame>("24h");
   const { toast } = useToast();
   const isAdmin = user?.publicMetadata?.role === 'admin';
+
+  // Simulate fetching chart data (in a real app, you would fetch this from an API)
+  const fetchChartData = (coinId: string, tf: TimeFrame) => {
+    // This is placeholder data - in a real application, you would fetch actual data
+    const now = Date.now();
+    const data: ChartData[] = [];
+    
+    const intervals = tf === "24h" ? 24 : tf === "7d" ? 7 : 30;
+    const step = tf === "24h" ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    
+    for (let i = 0; i < intervals; i++) {
+      const timestamp = now - (intervals - i) * step;
+      const price = 10000 + Math.random() * 2000;
+      data.push({ timestamp, price });
+    }
+    
+    setChartData(data);
+  };
+
+  // Update chart data when selected coin or timeframe changes
+  const handleTimeFrameChange = (newTimeFrame: TimeFrame) => {
+    setTimeFrame(newTimeFrame);
+    if (selectedCoin) {
+      fetchChartData(selectedCoin.id, newTimeFrame);
+    }
+  };
 
   const handleSelectCrypto = (crypto: CryptoData | null) => {
     if (!crypto) {
@@ -29,6 +57,8 @@ export default function Index() {
     // If we're not in compare mode and it's a regular click
     if (!selectedCryptos[0] && !selectedCryptos[1]) {
       setSelectedCoin(crypto);
+      // Fetch chart data for the selected coin
+      fetchChartData(crypto.id, timeFrame);
       return;
     }
 
@@ -96,7 +126,11 @@ export default function Index() {
           >
             Back to List
           </Button>
-          <PriceChart cryptoId={selectedCoin.id} />
+          <PriceChart 
+            data={chartData}
+            timeFrame={timeFrame}
+            onTimeFrameChange={handleTimeFrameChange}
+          />
         </div>
       )}
 

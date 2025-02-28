@@ -4,8 +4,8 @@ import { useUser } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import CryptoList from "@/components/CryptoList";
-import { useCryptoData } from "@/hooks/useCryptoData";
-import { useState } from "react";
+import { useCryptoData, useHistoricalData } from "@/hooks/useCryptoData";
+import { useState, useEffect } from "react";
 import { CryptoData, ChartData, TimeFrame } from "@/lib/types";
 import { useToast } from "@/components/ui/use-toast";
 import PriceChart from "@/components/PriceChart";
@@ -20,31 +20,33 @@ export default function Index() {
   const [timeFrame, setTimeFrame] = useState<TimeFrame>("24h");
   const { toast } = useToast();
   const isAdmin = user?.publicMetadata?.role === 'admin';
-
-  // Simulate fetching chart data (in a real app, you would fetch this from an API)
-  const fetchChartData = (coinId: string, tf: TimeFrame) => {
-    // This is placeholder data - in a real application, you would fetch actual data
-    const now = Date.now();
-    const data: ChartData[] = [];
-    
-    const intervals = tf === "24h" ? 24 : tf === "7d" ? 7 : 30;
-    const step = tf === "24h" ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
-    
-    for (let i = 0; i < intervals; i++) {
-      const timestamp = now - (intervals - i) * step;
-      const price = 10000 + Math.random() * 2000;
-      data.push({ timestamp, price });
+  
+  // Convert timeFrame to days for API request
+  const timeFrameToDays = (tf: TimeFrame): number => {
+    switch(tf) {
+      case "24h": return 1;
+      case "7d": return 7;
+      case "30d": return 30;
+      default: return 1;
     }
-    
-    setChartData(data);
   };
+
+  // Use the historical data hook when we have a selected coin
+  const { data: historicalData, isLoading: isChartLoading } = useHistoricalData(
+    selectedCoin?.id || "",
+    timeFrameToDays(timeFrame)
+  );
+
+  // Update chart data when historical data is loaded
+  useEffect(() => {
+    if (historicalData) {
+      setChartData(historicalData);
+    }
+  }, [historicalData]);
 
   // Update chart data when selected coin or timeframe changes
   const handleTimeFrameChange = (newTimeFrame: TimeFrame) => {
     setTimeFrame(newTimeFrame);
-    if (selectedCoin) {
-      fetchChartData(selectedCoin.id, newTimeFrame);
-    }
   };
 
   const handleSelectCrypto = (crypto: CryptoData | null) => {
@@ -57,8 +59,6 @@ export default function Index() {
     // If we're not in compare mode and it's a regular click
     if (!selectedCryptos[0] && !selectedCryptos[1]) {
       setSelectedCoin(crypto);
-      // Fetch chart data for the selected coin
-      fetchChartData(crypto.id, timeFrame);
       return;
     }
 
@@ -126,11 +126,17 @@ export default function Index() {
           >
             Back to List
           </Button>
-          <PriceChart 
-            data={chartData}
-            timeFrame={timeFrame}
-            onTimeFrameChange={handleTimeFrameChange}
-          />
+          {isChartLoading ? (
+            <div className="flex justify-center items-center h-96">
+              <p>Loading chart data...</p>
+            </div>
+          ) : (
+            <PriceChart 
+              data={chartData}
+              timeFrame={timeFrame}
+              onTimeFrameChange={handleTimeFrameChange}
+            />
+          )}
         </div>
       )}
 

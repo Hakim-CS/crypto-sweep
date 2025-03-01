@@ -156,9 +156,10 @@ export default function Index() {
             {t('education')}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
+            */}
         </div>
       </div>
-      */}
+    
 
       {selectedCoin && !isCompareMode && (
         <div className="mb-8">

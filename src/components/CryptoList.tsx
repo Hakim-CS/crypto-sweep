@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { CryptoData } from "@/lib/types";
 import CryptoCard from "./CryptoCard";
@@ -30,10 +29,7 @@ export default function CryptoList({
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const { toast } = useToast();
   const { isSignedIn, user } = useUser();
-
-  // Console log for debugging
-  console.log("CryptoList - watchlist:", watchlist);
-  console.log("CryptoList - isSignedIn:", isSignedIn);
+  const [processingIds, setProcessingIds] = useState<string[]>([]);
 
   const toggleWatchlist = async (crypto: CryptoData) => {
     if (!isSignedIn || !user) {
@@ -45,59 +41,91 @@ export default function CryptoList({
       return;
     }
 
+    // Prevent multiple clicks on the same crypto
+    if (processingIds.includes(crypto.id)) {
+      return;
+    }
+
     try {
-      console.log("Toggling watchlist for:", crypto.id);
-      console.log("Current watchlist:", watchlist);
+      setProcessingIds(prev => [...prev, crypto.id]);
       
       // Check if the crypto is already in the watchlist
       const existingIndex = watchlist.findIndex(item => item.cryptoId === crypto.id);
       let newWatchlist;
+      let successMessage;
 
       if (existingIndex >= 0) {
         // Remove from watchlist
         newWatchlist = watchlist.filter(item => item.cryptoId !== crypto.id);
-        toast({
-          title: "Removed from Watchlist",
-          description: `${crypto.name} has been removed from your watchlist`,
-        });
+        successMessage = `${crypto.name} has been removed from your watchlist`;
       } else {
         // Add to watchlist
         newWatchlist = [...watchlist, { cryptoId: crypto.id }];
-        toast({
-          title: "Added to Watchlist",
-          description: `${crypto.name} has been added to your watchlist`,
-        });
+        successMessage = `${crypto.name} has been added to your watchlist`;
       }
 
-      console.log("New watchlist:", newWatchlist);
-
-      // Update watchlist in database
-      const { error } = await supabase
-        .from('portfolios')
-        .update({ watchlist: newWatchlist })
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error updating watchlist:', error);
-        toast({
-          title: "Error",
-          description: "Failed to update watchlist",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // If database update successful, update parent component state
+      // First update local state for immediate UI feedback
       if (onUpdateWatchlist) {
         onUpdateWatchlist(newWatchlist);
       }
+
+      // Then update the database
+      const { data: portfolioData, error: portfolioError } = await supabase
+        .from('portfolios')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (portfolioError) {
+        throw new Error(`Error checking portfolio: ${portfolioError.message}`);
+      }
+
+      // If portfolio doesn't exist yet, create one
+      if (!portfolioData) {
+        const { error: insertError } = await supabase
+          .from('portfolios')
+          .insert({
+            user_id: user.id,
+            watchlist: newWatchlist,
+            assets: [],
+            balance: 1000
+          });
+
+        if (insertError) {
+          throw new Error(`Error creating portfolio: ${insertError.message}`);
+        }
+      } else {
+        // Update existing portfolio
+        const { error: updateError } = await supabase
+          .from('portfolios')
+          .update({ watchlist: newWatchlist })
+          .eq('user_id', user.id);
+
+        if (updateError) {
+          throw new Error(`Error updating watchlist: ${updateError.message}`);
+        }
+      }
+
+      // Show success notification
+      toast({
+        title: existingIndex >= 0 ? "Removed from Watchlist" : "Added to Watchlist",
+        description: successMessage,
+      });
     } catch (err) {
       console.error('Error in toggleWatchlist:', err);
+      
+      // Revert local state change on error
+      if (onUpdateWatchlist) {
+        onUpdateWatchlist(watchlist); // Revert to original watchlist
+      }
+      
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: err instanceof Error ? err.message : "An unexpected error occurred",
         variant: "destructive",
       });
+    } finally {
+      setProcessingIds(prev => prev.filter(id => id !== crypto.id));
     }
   };
 
@@ -182,6 +210,7 @@ export default function CryptoList({
                   toggleWatchlist(crypto);
                 }}
                 title={isInWatchlist(crypto) ? "Remove from watchlist" : "Add to watchlist"}
+                disabled={processingIds.includes(crypto.id)}
               >
                 {isInWatchlist(crypto) ? (
                   <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />

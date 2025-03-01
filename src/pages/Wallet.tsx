@@ -327,6 +327,189 @@ export default function WalletPage() {
   }
 };
 
+  // Handle deposit functionality
+  const handleDeposit = async () => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be signed in to make deposits",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const depositAmountNum = parseFloat(depositAmount);
+    if (isNaN(depositAmountNum) || depositAmountNum <= 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log("Processing deposit of:", depositAmountNum);
+      
+      // Create transaction record
+      const transaction = {
+        user_id: user.id,
+        crypto_id: null,
+        amount: depositAmountNum,
+        price: null,
+        type: "deposit",
+        timestamp: new Date().toISOString()
+      };
+
+      // Insert transaction into Supabase
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert(transaction);
+
+      if (transactionError) {
+        console.error('Deposit transaction error:', transactionError);
+        toast({
+          title: "Error",
+          description: "Failed to process deposit",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update portfolio balance
+      const newBalance = (portfolio.balance || 0) + depositAmountNum;
+
+      const { error: portfolioError } = await supabase
+        .from('portfolios')
+        .update({ balance: newBalance })
+        .eq('user_id', user.id);
+
+      if (portfolioError) {
+        console.error('Portfolio update error during deposit:', portfolioError);
+        toast({
+          title: "Error",
+          description: "Failed to update portfolio balance",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setPortfolio({
+        ...portfolio,
+        balance: newBalance
+      });
+
+      toast({
+        title: "Success",
+        description: `Successfully deposited $${depositAmountNum.toFixed(2)}`,
+      });
+      setDepositAmount("");
+    } catch (error) {
+      console.error('Deposit handling error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred during deposit",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle withdraw functionality
+  const handleWithdraw = async () => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be signed in to make withdrawals",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const withdrawAmountNum = parseFloat(withdrawAmount);
+    if (isNaN(withdrawAmountNum) || withdrawAmountNum <= 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (withdrawAmountNum > (portfolio.balance || 0)) {
+      toast({
+        title: "Error",
+        description: `Insufficient funds. Your balance is $${(portfolio.balance || 0).toFixed(2)}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log("Processing withdrawal of:", withdrawAmountNum);
+      
+      // Create transaction record
+      const transaction = {
+        user_id: user.id,
+        crypto_id: null,
+        amount: -withdrawAmountNum, // Negative amount for withdrawals
+        price: null,
+        type: "withdraw",
+        timestamp: new Date().toISOString()
+      };
+
+      // Insert transaction into Supabase
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert(transaction);
+
+      if (transactionError) {
+        console.error('Withdrawal transaction error:', transactionError);
+        toast({
+          title: "Error",
+          description: "Failed to process withdrawal",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update portfolio balance
+      const newBalance = (portfolio.balance || 0) - withdrawAmountNum;
+
+      const { error: portfolioError } = await supabase
+        .from('portfolios')
+        .update({ balance: newBalance })
+        .eq('user_id', user.id);
+
+      if (portfolioError) {
+        console.error('Portfolio update error during withdrawal:', portfolioError);
+        toast({
+          title: "Error",
+          description: "Failed to update portfolio balance",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setPortfolio({
+        ...portfolio,
+        balance: newBalance
+      });
+
+      toast({
+        title: "Success",
+        description: `Successfully withdrew $${withdrawAmountNum.toFixed(2)}`,
+      });
+      setWithdrawAmount("");
+    } catch (error) {
+      console.error('Withdrawal handling error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred during withdrawal",
+        variant: "destructive",
+      });
+    }
+  };
+
   const isValidSellAmount = () => {
     if (!selectedCrypto || !amount || transactionType !== "sell") return true;
     const holdings = calculateTotalHoldings(selectedCrypto);

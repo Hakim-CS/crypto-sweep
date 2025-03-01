@@ -147,6 +147,7 @@ export default function Index() {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           )}
+          {/*
           <Button 
             onClick={() => navigate('/education')} 
             className="mb-8"
@@ -157,6 +158,7 @@ export default function Index() {
           </Button>
         </div>
       </div>
+      */}
 
       {selectedCoin && !isCompareMode && (
         <div className="mb-8">

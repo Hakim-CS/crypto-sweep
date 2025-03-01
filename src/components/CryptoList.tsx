@@ -31,6 +31,10 @@ export default function CryptoList({
   const { toast } = useToast();
   const { isSignedIn, user } = useUser();
 
+  // Console log for debugging
+  console.log("CryptoList - watchlist:", watchlist);
+  console.log("CryptoList - isSignedIn:", isSignedIn);
+
   const toggleWatchlist = async (crypto: CryptoData) => {
     if (!isSignedIn || !user) {
       toast({
@@ -42,6 +46,9 @@ export default function CryptoList({
     }
 
     try {
+      console.log("Toggling watchlist for:", crypto.id);
+      console.log("Current watchlist:", watchlist);
+      
       // Check if the crypto is already in the watchlist
       const existingIndex = watchlist.findIndex(item => item.cryptoId === crypto.id);
       let newWatchlist;
@@ -61,6 +68,8 @@ export default function CryptoList({
           description: `${crypto.name} has been added to your watchlist`,
         });
       }
+
+      console.log("New watchlist:", newWatchlist);
 
       // Update watchlist in database
       const { error } = await supabase
@@ -124,7 +133,7 @@ export default function CryptoList({
     selectedCryptos[0]?.id === crypto.id || selectedCryptos[1]?.id === crypto.id;
 
   const isInWatchlist = (crypto: CryptoData) => 
-    watchlist.some(item => item.cryptoId === crypto.id);
+    watchlist && Array.isArray(watchlist) && watchlist.some(item => item.cryptoId === crypto.id);
 
   const handleSort = (sortField: "rank" | "name" | "price" | "change") => {
     if (sortBy === sortField) {

@@ -27,12 +27,14 @@ export default function WatchlistCard({ watchlist, cryptos, onUpdateWatchlist }:
   };
 
   // Get the actual crypto objects from the watchlist IDs
-  const watchlistItems = watchlist
-    .map(item => {
-      const crypto = cryptos.find(c => c.id === item.cryptoId);
-      return crypto ? { ...item, crypto } : null;
-    })
-    .filter(item => item !== null) as Array<{ cryptoId: string; crypto: CryptoData }>;
+  const watchlistItems = watchlist && Array.isArray(watchlist)
+    ? watchlist
+        .map(item => {
+          const crypto = cryptos.find(c => c.id === item.cryptoId);
+          return crypto ? { ...item, crypto } : null;
+        })
+        .filter(item => item !== null) as Array<{ cryptoId: string; crypto: CryptoData }>
+    : [];
 
   return (
     <Card className="glass">

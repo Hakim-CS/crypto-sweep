@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useCryptoData } from "@/hooks/useCryptoData";
 import { useToast } from "@/components/ui/use-toast";
@@ -65,15 +64,22 @@ export default function WalletPage() {
       }
 
       try {
+        console.log("Fetching portfolio for user:", user.id);
+      
         // Check if user has a portfolio
         const { data, error } = await supabase
           .from('portfolios')
           .select('*')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
+
+        console.log("Portfolio query result:", { data, error });
 
         if (error) {
+          console.error('Error fetching portfolio:', error);
+        
           if (error.code === 'PGRST116') {
+            console.log("Portfolio doesn't exist, creating a new one");
             // Portfolio doesn't exist, create a new one
             const newPortfolio = { 
               user_id: user.id, 
@@ -81,7 +87,7 @@ export default function WalletPage() {
               watchlist: [], 
               balance: 1000 
             };
-            
+          
             const { error: insertError } = await supabase
               .from('portfolios')
               .insert(newPortfolio);
@@ -97,7 +103,6 @@ export default function WalletPage() {
               setPortfolio(newPortfolio);
             }
           } else {
-            console.error('Error fetching portfolio:', error);
             toast({
               title: "Error",
               description: "Failed to fetch portfolio data",
@@ -105,7 +110,14 @@ export default function WalletPage() {
             });
           }
         } else if (data) {
-          setPortfolio(data);
+          console.log("Portfolio fetched successfully:", data);
+          // Ensure data structure is correct
+          const portfolioData = {
+            ...data,
+            assets: Array.isArray(data.assets) ? data.assets : [],
+            watchlist: Array.isArray(data.watchlist) ? data.watchlist : []
+          };
+          setPortfolio(portfolioData);
         }
       } catch (error) {
         console.error('Error in portfolio fetch:', error);
@@ -118,14 +130,20 @@ export default function WalletPage() {
   }, [user?.id, toast]);
 
   const calculateTotalHoldings = (cryptoId: string) => {
-    if (!portfolio.assets || !Array.isArray(portfolio.assets)) return 0;
-    
-    return portfolio.assets.reduce((total: number, asset: any) => {
+    if (!portfolio.assets || !Array.isArray(portfolio.assets)) {
+      console.log("Portfolio assets is not an array:", portfolio.assets);
+      return 0;
+    }
+  
+    const total = portfolio.assets.reduce((total: number, asset: any) => {
       if (asset.cryptoId === cryptoId) {
         return total + asset.amount;
       }
       return total;
     }, 0);
+  
+    console.log(`Total holdings for ${cryptoId}:`, total);
+    return total;
   };
 
   const calculatePNL = (cryptoId: string) => {
@@ -142,7 +160,7 @@ export default function WalletPage() {
     }, 0);
   };
 
-  // Handle cryptocurrency transactions
+  // Fix the handleTransaction function to properly handle buy/sell operations
   const handleTransaction = async () => {
     if (!user?.id) {
       toast({
@@ -163,6 +181,8 @@ export default function WalletPage() {
     }
 
     try {
+      console.log("Starting transaction with:", { selectedCrypto, amount, transactionType, amountType });
+    
       const crypto = cryptos?.find(c => c.id === selectedCrypto);
       if (!crypto) {
         toast({
@@ -172,7 +192,7 @@ export default function WalletPage() {
         });
         return;
       }
-  
+
       const amountNum = parseFloat(amount);
       if (isNaN(amountNum) || amountNum <= 0) {
         toast({
@@ -182,231 +202,19 @@ export default function WalletPage() {
         });
         return;
       }
-  
+
       const totalUSD = amountType === "coin" 
         ? amountNum * crypto.current_price
         : amountNum;
-      
+    
       const coinAmount = amountType === "coin" 
         ? amountNum 
         : amountNum / crypto.current_price;
-  
-      // Check if user has enough balance for buying
-      if (transactionType === "buy" && totalUSD > portfolio.balance) {
-        toast({
-          title: "Error",
-          description: `Insufficient balance. You only have $${portfolio.balance.toFixed(2)}`,
-          variant: "destructive",
-        });
-        return;
-      }
-  
-      // Check if user has enough crypto for selling
-      if (transactionType === "sell") {
-        const currentHoldings = calculateTotalHoldings(selectedCrypto);
-        if (coinAmount > currentHoldings) {
-          toast({
-            title: "Error",
-            description: `Insufficient balance. You only have ${currentHoldings} ${crypto.symbol.toUpperCase()}`,
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-  
-      // Create transaction record
-      const transaction = {
-        user_id: user.id,
-        crypto_id: selectedCrypto,
-        amount: transactionType === "sell" ? -coinAmount : coinAmount,
-        price: crypto.current_price,
-        type: transactionType,
-        timestamp: new Date().toISOString()
-      };
-  
-      // Insert transaction into Supabase
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert(transaction);
-  
-      if (transactionError) {
-        console.error('Transaction error:', transactionError);
-        toast({
-          title: "Error",
-          description: "Failed to process transaction",
-          variant: "destructive",
-        });
-        return;
-      }
-  
-      // Update portfolio assets
-      const newAsset = {
-        cryptoId: selectedCrypto,
-        amount: transactionType === "sell" ? -coinAmount : coinAmount,
-        buyPrice: crypto.current_price,
-        timestamp: Date.now()
-      };
-  
-      // Update portfolio balance
-      const newBalance = transactionType === "buy"
-        ? portfolio.balance - totalUSD
-        : portfolio.balance + totalUSD;
-  
-      // Update portfolio in state and Supabase
-      const updatedPortfolio = {
-        ...portfolio,
-        assets: [...(portfolio.assets || []), newAsset],
-        balance: newBalance
-      };
-  
-      const { error: portfolioError } = await supabase
-        .from('portfolios')
-        .update({
-          assets: updatedPortfolio.assets,
-          balance: updatedPortfolio.balance
-        })
-        .eq('user_id', user.id);
-  
-      if (portfolioError) {
-        console.error('Portfolio update error:', portfolioError);
-        toast({
-          title: "Error",
-          description: "Failed to update portfolio",
-          variant: "destructive",
-        });
-        return;
-      }
-  
-      setPortfolio(updatedPortfolio);
-      toast({
-        title: "Success",
-        description: `Successfully ${transactionType === "buy" ? "bought" : "sold"} ${
-          amountType === "coin" 
-            ? `${amountNum} ${crypto.symbol.toUpperCase()}`
-            : `$${amountNum} of ${crypto.symbol.toUpperCase()}`
-        }`,
-      });
-      setAmount("");
-    } catch (error) {
-      console.error('Transaction handling error:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    }
-  };
 
-  // Handle deposit functionality
-  const handleDeposit = async () => {
-    if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "You must be signed in to make deposits",
-        variant: "destructive",
-      });
-      return;
-    }
+    console.log("Transaction details:", { totalUSD, coinAmount, balance: portfolio.balance });
 
-    if (!depositAmount || parseFloat(depositAmount) <= 0) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid amount",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const amount = parseFloat(depositAmount);
-      
-      // Create transaction record
-      const transaction = {
-        user_id: user.id,
-        crypto_id: null,
-        amount: amount,
-        price: null,
-        type: "deposit",
-        timestamp: new Date().toISOString()
-      };
-
-      // Insert transaction into Supabase
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert(transaction);
-
-      if (transactionError) {
-        console.error('Deposit transaction error:', transactionError);
-        toast({
-          title: "Error",
-          description: "Failed to process deposit",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Update portfolio balance
-      const newBalance = portfolio.balance + amount;
-      const updatedPortfolio = {
-        ...portfolio,
-        balance: newBalance
-      };
-
-      const { error: portfolioError } = await supabase
-        .from('portfolios')
-        .update({ balance: newBalance })
-        .eq('user_id', user.id);
-
-      if (portfolioError) {
-        console.error('Portfolio update error:', portfolioError);
-        toast({
-          title: "Error",
-          description: "Failed to update balance",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setPortfolio(updatedPortfolio);
-      toast({
-        title: "Success",
-        description: `Successfully deposited $${amount.toFixed(2)}`,
-      });
-      setDepositAmount("");
-    } catch (error) {
-      console.error('Deposit handling error:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Handle withdrawal functionality
-  const handleWithdraw = async () => {
-    if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "You must be signed in to make withdrawals",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid amount",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const amount = parseFloat(withdrawAmount);
-    
-    // Check if user has enough balance
-    if (amount > portfolio.balance) {
+    // Check if user has enough balance for buying
+    if (transactionType === "buy" && totalUSD > portfolio.balance) {
       toast({
         title: "Error",
         description: `Insufficient balance. You only have $${portfolio.balance.toFixed(2)}`,
@@ -415,69 +223,109 @@ export default function WalletPage() {
       return;
     }
 
-    try {
-      // Create transaction record
-      const transaction = {
-        user_id: user.id,
-        crypto_id: null,
-        amount: -amount,
-        price: null,
-        type: "withdraw",
-        timestamp: new Date().toISOString()
-      };
-
-      // Insert transaction into Supabase
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert(transaction);
-
-      if (transactionError) {
-        console.error('Withdrawal transaction error:', transactionError);
+    // Check if user has enough crypto for selling
+    if (transactionType === "sell") {
+      const currentHoldings = calculateTotalHoldings(selectedCrypto);
+      console.log("Sell check - current holdings:", currentHoldings, "attempting to sell:", coinAmount);
+      if (coinAmount > currentHoldings) {
         toast({
           title: "Error",
-          description: "Failed to process withdrawal",
+          description: `Insufficient balance. You only have ${currentHoldings} ${crypto.symbol.toUpperCase()}`,
           variant: "destructive",
         });
         return;
       }
+    }
 
-      // Update portfolio balance
-      const newBalance = portfolio.balance - amount;
-      const updatedPortfolio = {
-        ...portfolio,
-        balance: newBalance
-      };
+    // Create transaction record
+    const transaction = {
+      user_id: user.id,
+      crypto_id: selectedCrypto,
+      amount: transactionType === "sell" ? -coinAmount : coinAmount,
+      price: crypto.current_price,
+      type: transactionType,
+      timestamp: new Date().toISOString()
+    };
 
-      const { error: portfolioError } = await supabase
-        .from('portfolios')
-        .update({ balance: newBalance })
-        .eq('user_id', user.id);
+    console.log("Creating transaction:", transaction);
 
-      if (portfolioError) {
-        console.error('Portfolio update error:', portfolioError);
-        toast({
-          title: "Error",
-          description: "Failed to update balance",
-          variant: "destructive",
-        });
-        return;
-      }
+    // Insert transaction into Supabase
+    const { error: transactionError } = await supabase
+      .from('transactions')
+      .insert(transaction);
 
-      setPortfolio(updatedPortfolio);
-      toast({
-        title: "Success",
-        description: `Successfully withdrew $${amount.toFixed(2)}`,
-      });
-      setWithdrawAmount("");
-    } catch (error) {
-      console.error('Withdrawal handling error:', error);
+    if (transactionError) {
+      console.error('Transaction error:', transactionError);
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: "Failed to process transaction",
         variant: "destructive",
       });
+      return;
     }
-  };
+
+    // Update portfolio assets
+    const newAsset = {
+      cryptoId: selectedCrypto,
+      amount: transactionType === "sell" ? -coinAmount : coinAmount,
+      buyPrice: crypto.current_price,
+      timestamp: Date.now()
+    };
+
+    // Update portfolio balance
+    const newBalance = transactionType === "buy"
+      ? portfolio.balance - totalUSD
+      : portfolio.balance + totalUSD;
+
+    // Ensure portfolio.assets is an array
+    const currentAssets = Array.isArray(portfolio.assets) ? portfolio.assets : [];
+
+    // Update portfolio in state and Supabase
+    const updatedPortfolio = {
+      ...portfolio,
+      assets: [...currentAssets, newAsset],
+      balance: newBalance
+    };
+
+    console.log("Updating portfolio:", updatedPortfolio);
+
+    const { error: portfolioError } = await supabase
+      .from('portfolios')
+      .update({
+        assets: updatedPortfolio.assets,
+        balance: updatedPortfolio.balance
+      })
+      .eq('user_id', user.id);
+
+    if (portfolioError) {
+      console.error('Portfolio update error:', portfolioError);
+      toast({
+        title: "Error",
+        description: "Failed to update portfolio",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPortfolio(updatedPortfolio);
+    toast({
+      title: "Success",
+      description: `Successfully ${transactionType === "buy" ? "bought" : "sold"} ${
+        amountType === "coin" 
+          ? `${amountNum} ${crypto.symbol.toUpperCase()}`
+          : `$${amountNum} of ${crypto.symbol.toUpperCase()}`
+      }`,
+    });
+    setAmount("");
+  } catch (error) {
+    console.error('Transaction handling error:', error);
+    toast({
+      title: "Error",
+      description: "An unexpected error occurred",
+      variant: "destructive",
+    });
+  }
+};
 
   const isValidSellAmount = () => {
     if (!selectedCrypto || !amount || transactionType !== "sell") return true;

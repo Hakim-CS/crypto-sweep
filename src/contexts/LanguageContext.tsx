@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 // Define available languages
@@ -16,7 +15,7 @@ export type Translations = {
 export const translations: Translations = {
   // Navigation
   home: { en: 'Home', tr: 'Ana Sayfa' },
-  wallet: { en: 'Wallet', tr: 'Cüzdan' },
+  walletNav: { en: 'Wallet', tr: 'Cüzdan' }, // Changed key name to walletNav
   education: { en: 'Info', tr: 'Bilgi' },
   signIn: { en: 'Sign In', tr: 'Giriş Yap' },
   signUp: { en: 'Sign Up', tr: 'Kayıt Ol' },
@@ -64,7 +63,7 @@ export const translations: Translations = {
     en: 'The process of validating transactions and adding them to the blockchain ledger, typically requiring powerful computers.', 
     tr: 'İşlemleri doğrulama ve blok zinciri defterine ekleme süreci, genellikle güçlü bilgisayarlar gerektirir.' 
   },
-  wallet: { 
+  walletGlossary: { // Changed key name to walletGlossary
     en: 'Wallet', 
     tr: 'Cüzdan' 
   },

@@ -17,7 +17,7 @@ export const translations: Translations = {
   // Navigation
   home: { en: 'Home', tr: 'Ana Sayfa' },
   wallet: { en: 'Wallet', tr: 'Cüzdan' },
-  education: { en: 'Education', tr: 'Eğitim' },
+  education: { en: 'Info', tr: 'Bilgi' },
   signIn: { en: 'Sign In', tr: 'Giriş Yap' },
   signUp: { en: 'Sign Up', tr: 'Kayıt Ol' },
   
@@ -65,8 +65,8 @@ export const translations: Translations = {
     tr: 'İşlemleri doğrulama ve blok zinciri defterine ekleme süreci, genellikle güçlü bilgisayarlar gerektirir.' 
   },
   wallet: { 
-    en: 'A digital tool that allows users to store and manage their cryptocurrencies.', 
-    tr: 'Kullanıcıların kripto paralarını depolamasına ve yönetmesine olanak tanıyan dijital bir araç.' 
+    en: 'Wallet', 
+    tr: 'Cüzdan' 
   },
   defi: { 
     en: 'Decentralized Finance - financial services using smart contracts on blockchains, operating without centralized authorities.', 

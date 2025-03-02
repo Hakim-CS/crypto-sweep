@@ -2,6 +2,7 @@
 import { useUser } from "@clerk/clerk-react";
 import { Navigate } from "react-router-dom";
 import { Spinner } from "lucide-react";
+import { Loader } from "lucide-react";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -14,7 +15,7 @@ export default function AuthLayout({ children, requireAdmin = false }: AuthLayou
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Spinner className="h-8 w-8 animate-spin" />
+        <Loader className="h-8 w-8 animate-spin" />
         <span className="ml-2">Loading...</span>
       </div>
     );

@@ -5,6 +5,7 @@ import { Star, ArrowUpIcon, ArrowDownIcon, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface WatchlistCardProps {
   watchlist: Array<{ cryptoId: string }>;
@@ -15,14 +16,16 @@ interface WatchlistCardProps {
 export default function WatchlistCard({ watchlist, cryptos, onUpdateWatchlist }: WatchlistCardProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const handleRemoveFromWatchlist = (cryptoId: string) => {
     const newWatchlist = watchlist.filter(item => item.cryptoId !== cryptoId);
     onUpdateWatchlist(newWatchlist);
     
+    const cryptoName = cryptos.find(c => c.id === cryptoId)?.name || cryptoId;
     toast({
-      title: "Removed from Watchlist",
-      description: `${cryptos.find(c => c.id === cryptoId)?.name} has been removed from your watchlist`,
+      title: t('removedFromWatchlist'),
+      description: `${cryptoName} ${t('hasBeenRemoved')}`,
     });
   };
 
@@ -39,14 +42,14 @@ export default function WatchlistCard({ watchlist, cryptos, onUpdateWatchlist }:
   return (
     <Card className="glass">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Watchlist</CardTitle>
+        <CardTitle>{t('watchlist')}</CardTitle>
         <Button 
           variant="outline" 
           size="sm"
           onClick={() => navigate("/")}
         >
           <PlusCircle className="h-4 w-4 mr-1" />
-          Add
+          {t('add')}
         </Button>
       </CardHeader>
       <CardContent>
@@ -88,7 +91,7 @@ export default function WatchlistCard({ watchlist, cryptos, onUpdateWatchlist }:
             })
           ) : (
             <div className="text-center text-muted-foreground py-8">
-              Your watchlist is empty. Add coins from the market to track them here!
+              {t('emptyWatchlist')}
             </div>
           )}
         </div>

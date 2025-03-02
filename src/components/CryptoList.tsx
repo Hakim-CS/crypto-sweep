@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { CryptoData } from "@/lib/types";
 import CryptoCard from "./CryptoCard";
@@ -8,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useUser } from "@clerk/clerk-react";
 import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CryptoListProps {
   cryptos: CryptoData[];
@@ -29,13 +32,15 @@ export default function CryptoList({
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const { toast } = useToast();
   const { isSignedIn, user } = useUser();
+  const navigate = useNavigate();
+  const { t } = useLanguage();
   const [processingIds, setProcessingIds] = useState<string[]>([]);
 
   const toggleWatchlist = async (crypto: CryptoData) => {
     if (!isSignedIn || !user) {
       toast({
-        title: "Authentication Required",
-        description: "Please sign in to add cryptocurrencies to your watchlist",
+        title: t('authRequired'),
+        description: t('signInForWatchlist'),
         variant: "destructive",
       });
       return;
@@ -50,39 +55,38 @@ export default function CryptoList({
       setProcessingIds(prev => [...prev, crypto.id]);
       
       // Check if the crypto is already in the watchlist
-      const existingIndex = watchlist.findIndex(item => item.cryptoId === crypto.id);
+      const isInWatchlist = watchlist && Array.isArray(watchlist) && 
+        watchlist.some(item => item.cryptoId === crypto.id);
+      
       let newWatchlist;
-      let successMessage;
-
-      if (existingIndex >= 0) {
+      
+      if (isInWatchlist) {
         // Remove from watchlist
         newWatchlist = watchlist.filter(item => item.cryptoId !== crypto.id);
-        successMessage = `${crypto.name} has been removed from your watchlist`;
       } else {
         // Add to watchlist
         newWatchlist = [...watchlist, { cryptoId: crypto.id }];
-        successMessage = `${crypto.name} has been added to your watchlist`;
       }
 
-      // First update local state for immediate UI feedback
+      // Update local state first for immediate UI feedback
       if (onUpdateWatchlist) {
         onUpdateWatchlist(newWatchlist);
       }
 
-      // Then update the database
-      const { data: portfolioData, error: portfolioError } = await supabase
+      // Fetch the user's portfolio
+      const { data: portfolioData, error: fetchError } = await supabase
         .from('portfolios')
-        .select('id')
+        .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (portfolioError) {
-        throw new Error(`Error checking portfolio: ${portfolioError.message}`);
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw new Error(`Error fetching portfolio: ${fetchError.message}`);
       }
 
-      // If portfolio doesn't exist yet, create one
       if (!portfolioData) {
-        const { error: insertError } = await supabase
+        // Create a new portfolio if it doesn't exist
+        const { error: createError } = await supabase
           .from('portfolios')
           .insert({
             user_id: user.id,
@@ -91,8 +95,8 @@ export default function CryptoList({
             balance: 1000
           });
 
-        if (insertError) {
-          throw new Error(`Error creating portfolio: ${insertError.message}`);
+        if (createError) {
+          throw new Error(`Error creating portfolio: ${createError.message}`);
         }
       } else {
         // Update existing portfolio
@@ -108,20 +112,22 @@ export default function CryptoList({
 
       // Show success notification
       toast({
-        title: existingIndex >= 0 ? "Removed from Watchlist" : "Added to Watchlist",
-        description: successMessage,
+        title: isInWatchlist ? t('removedFromWatchlist') : t('addedToWatchlist'),
+        description: isInWatchlist 
+          ? `${crypto.name} ${t('hasBeenRemoved')}` 
+          : `${crypto.name} ${t('hasBeenAdded')}`,
       });
     } catch (err) {
       console.error('Error in toggleWatchlist:', err);
       
       // Revert local state change on error
       if (onUpdateWatchlist) {
-        onUpdateWatchlist(watchlist); // Revert to original watchlist
+        onUpdateWatchlist(watchlist);
       }
       
       toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : "An unexpected error occurred",
+        title: t('error'),
+        description: err instanceof Error ? err.message : t('unexpectedError'),
         variant: "destructive",
       });
     } finally {
@@ -209,7 +215,7 @@ export default function CryptoList({
                   e.stopPropagation();
                   toggleWatchlist(crypto);
                 }}
-                title={isInWatchlist(crypto) ? "Remove from watchlist" : "Add to watchlist"}
+                title={isInWatchlist(crypto) ? t('removeFromWatchlist') : t('addToWatchlist')}
                 disabled={processingIds.includes(crypto.id)}
               >
                 {isInWatchlist(crypto) ? (

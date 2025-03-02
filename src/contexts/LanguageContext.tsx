@@ -1,180 +1,139 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-// Define available languages
-export type Language = 'en' | 'tr';
+type Language = 'en' | 'tr';
 
-// Define translation object type
-export type Translations = {
+type Translations = {
   [key: string]: {
     en: string;
     tr: string;
   };
 };
 
-// Create translations object
-export const translations: Translations = {
-  // Navigation
-  home: { en: 'Home', tr: 'Ana Sayfa' },
-  walletNav: { en: 'Wallet', tr: 'Cüzdan' }, // Changed key name to walletNav
-  education: { en: 'Info', tr: 'Bilgi' },
-  signIn: { en: 'Sign In', tr: 'Giriş Yap' },
-  signUp: { en: 'Sign Up', tr: 'Kayıt Ol' },
-  
-  // Common
-  welcomeBack: { en: 'Welcome back', tr: 'Tekrar hoşgeldiniz' },
-  welcomeAdmin: { en: 'Welcome Admin', tr: 'Hoşgeldiniz Yönetici' },
-  cryptoTracker: { en: 'Cryptocurrency Tracker', tr: 'Kripto Para Takipçisi' },
-  trackPortfolio: { en: 'Track your portfolio and favorite cryptocurrencies', tr: 'Portföyünüzü ve favori kripto paralarınızı takip edin' },
-  signInToManage: { en: 'Sign in to start managing your crypto portfolio', tr: 'Kripto portföyünüzü yönetmeye başlamak için giriş yapın' },
-  goToWallet: { en: 'Go to Wallet', tr: 'Cüzdana Git' },
-  backToList: { en: 'Back to List', tr: 'Listeye Dön' },
-  loadingChart: { en: 'Loading chart data...', tr: 'Grafik verileri yükleniyor...' },
-  
-  // Educational Content
-  educationalResources: { en: 'Educational Resources', tr: 'Eğitim Kaynakları' },
-  learnAboutCrypto: { en: 'Learn about cryptocurrencies and trading strategies', tr: 'Kripto paralar ve ticaret stratejileri hakkında bilgi edinin' },
-  cryptoGlossary: { en: 'Crypto Glossary', tr: 'Kripto Sözlüğü' },
-  tradingStrategies: { en: 'Trading Strategies', tr: 'Ticaret Stratejileri' },
-  newsSources: { en: 'News Sources', tr: 'Haber Kaynakları' },
-  visitSite: { en: 'Visit Site', tr: 'Siteyi Ziyaret Et' },
-  
-  // Glossary Terms
-  blockchain: { 
-    en: 'A digital ledger of transactions that is duplicated and distributed across the entire network of computer systems.', 
-    tr: 'Bilgisayar sistemlerinin tüm ağına kopyalanan ve dağıtılan dijital bir işlem defteri.' 
+// Add all translations here
+const translations: Translations = {
+  cryptoTracker: {
+    en: 'Crypto Tracker',
+    tr: 'Kripto Takipçisi'
   },
-  cryptocurrency: { 
-    en: 'A digital or virtual currency that is secured by cryptography, making it nearly impossible to counterfeit.', 
-    tr: 'Taklit edilmesini neredeyse imkansız hale getiren kriptografi ile güvence altına alınmış dijital veya sanal para birimi.' 
+  welcomeBack: {
+    en: 'Welcome back',
+    tr: 'Tekrar hoş geldiniz'
   },
-  bitcoin: { 
-    en: 'The first and most well-known cryptocurrency, created in 2009 by an unknown person using the alias Satoshi Nakamoto.', 
-    tr: 'Satoshi Nakamoto takma adını kullanan bilinmeyen bir kişi tarafından 2009 yılında oluşturulan ilk ve en iyi bilinen kripto para birimi.' 
+  welcomeAdmin: {
+    en: 'Welcome admin',
+    tr: 'Hoş geldiniz yönetici'
   },
-  ethereum: { 
-    en: 'A decentralized, open-source blockchain with smart contract functionality. Ether is the native cryptocurrency of the platform.', 
-    tr: 'Akıllı sözleşme işlevselliğine sahip merkezi olmayan, açık kaynaklı bir blok zinciri. Ether, platformun yerel kripto para birimidir.' 
+  trackPortfolio: {
+    en: 'Track and manage your crypto portfolio',
+    tr: 'Kripto portföyünüzü takip edin ve yönetin'
   },
-  altcoin: { 
-    en: 'Any cryptocurrency other than Bitcoin. Examples include Ethereum, Ripple, and Litecoin.', 
-    tr: 'Bitcoin dışındaki herhangi bir kripto para. Örnekler arasında Ethereum, Ripple ve Litecoin bulunur.' 
+  signInToManage: {
+    en: 'Sign in to manage your portfolio',
+    tr: 'Portföyünüzü yönetmek için giriş yapın'
   },
-  mining: { 
-    en: 'The process of validating transactions and adding them to the blockchain ledger, typically requiring powerful computers.', 
-    tr: 'İşlemleri doğrulama ve blok zinciri defterine ekleme süreci, genellikle güçlü bilgisayarlar gerektirir.' 
+  goToWallet: {
+    en: 'Go to Wallet',
+    tr: 'Cüzdana Git'
   },
-  walletGlossary: { // Changed key name to walletGlossary
-    en: 'Wallet', 
-    tr: 'Cüzdan' 
+  education: {
+    en: 'Education',
+    tr: 'Eğitim'
   },
-  defi: { 
-    en: 'Decentralized Finance - financial services using smart contracts on blockchains, operating without centralized authorities.', 
-    tr: 'Merkezi Olmayan Finans - blok zincirleri üzerinde akıllı sözleşmeler kullanarak, merkezi otoriteler olmadan çalışan finansal hizmetler.' 
+  wallet: {
+    en: 'Wallet',
+    tr: 'Cüzdan'
   },
-  nft: { 
-    en: 'Non-Fungible Token - a unique digital asset that represents ownership of a specific item or piece of content.', 
-    tr: 'Değiştirilemez Token - belirli bir öğenin veya içerik parçasının sahipliğini temsil eden benzersiz bir dijital varlık.' 
+  info: {
+    en: 'Info',
+    tr: 'Bilgi'
   },
-  hodl: { 
-    en: 'A term derived from a misspelling of "hold" that refers to buying and holding cryptocurrency rather than selling it.', 
-    tr: 'Kripto parayı satmak yerine satın almak ve tutmak anlamına gelen "hold" (tutmak) kelimesinin yanlış yazımından türetilmiş bir terim.' 
+  backToList: {
+    en: 'Back to list',
+    tr: 'Listeye dön'
   },
-  
-  // Trading Strategies
-  dollarCostAveraging: { 
-    en: 'Investing a fixed amount regularly regardless of market conditions to reduce the impact of volatility.', 
-    tr: 'Volatilitenin etkisini azaltmak için piyasa koşullarına bakılmaksızın düzenli olarak sabit bir miktar yatırım yapmak.' 
+  loadingChart: {
+    en: 'Loading chart...',
+    tr: 'Grafik yükleniyor...'
   },
-  hodlStrategy: { 
-    en: 'Buying and holding cryptocurrency for the long term, ignoring short-term market fluctuations.', 
-    tr: 'Kısa vadeli piyasa dalgalanmalarını görmezden gelerek, uzun vadeli kripto para satın almak ve tutmak.' 
+  home: {
+    en: 'Home',
+    tr: 'Ana Sayfa'
   },
-  swingTrading: { 
-    en: 'Capitalizing on "swings" in prices by holding assets for a period of days or weeks.', 
-    tr: 'Varlıkları günler veya haftalar boyunca tutarak fiyatlardaki "salınımlardan" yararlanmak.' 
+  authRequired: {
+    en: 'Authentication Required',
+    tr: 'Kimlik Doğrulama Gerekli'
   },
-
-  // Steps for strategies
-  step1DCA: { 
-    en: 'Decide on a fixed amount you\'re comfortable investing regularly', 
-    tr: 'Düzenli olarak yatırım yapmaktan memnun olduğunuz sabit bir miktar belirleyin' 
+  signInForWatchlist: {
+    en: 'Please sign in to add cryptocurrencies to your watchlist',
+    tr: 'İzleme listenize kripto para eklemek için lütfen giriş yapın'
   },
-  step2DCA: { 
-    en: 'Choose a schedule (weekly, bi-weekly, monthly)', 
-    tr: 'Bir program seçin (haftalık, iki haftada bir, aylık)' 
+  removedFromWatchlist: {
+    en: 'Removed from Watchlist',
+    tr: 'İzleme Listesinden Kaldırıldı'
   },
-  step3DCA: { 
-    en: 'Stick to your schedule regardless of price fluctuations', 
-    tr: 'Fiyat dalgalanmalarına bakılmaksızın programınıza bağlı kalın' 
+  addedToWatchlist: {
+    en: 'Added to Watchlist',
+    tr: 'İzleme Listesine Eklendi'
   },
-  step4DCA: { 
-    en: 'This reduces the impact of market volatility on your overall purchase price', 
-    tr: 'Bu, piyasa oynaklığının genel satın alma fiyatınız üzerindeki etkisini azaltır' 
+  hasBeenRemoved: {
+    en: 'has been removed from your watchlist',
+    tr: 'izleme listenizden kaldırıldı'
   },
-  
-  step1HODL: { 
-    en: 'Research projects you believe have long-term potential', 
-    tr: 'Uzun vadeli potansiyele sahip olduğuna inandığınız projeleri araştırın' 
+  hasBeenAdded: {
+    en: 'has been added to your watchlist',
+    tr: 'izleme listenize eklendi'
   },
-  step2HODL: { 
-    en: 'Purchase those cryptocurrencies', 
-    tr: 'Bu kripto paraları satın alın' 
+  error: {
+    en: 'Error',
+    tr: 'Hata'
   },
-  step3HODL: { 
-    en: 'Hold them for an extended period (years)', 
-    tr: 'Onları uzun bir süre (yıllar) boyunca tutun' 
+  unexpectedError: {
+    en: 'An unexpected error occurred',
+    tr: 'Beklenmeyen bir hata oluştu'
   },
-  step4HODL: { 
-    en: 'Ignore day-to-day price fluctuations', 
-    tr: 'Günlük fiyat dalgalanmalarını görmezden gelin' 
+  removeFromWatchlist: {
+    en: 'Remove from watchlist',
+    tr: 'İzleme listesinden kaldır'
   },
-  
-  step1Swing: { 
-    en: 'Identify cryptocurrencies with historical price volatility', 
-    tr: 'Geçmiş fiyat oynaklığına sahip kripto paraları belirleyin' 
+  addToWatchlist: {
+    en: 'Add to watchlist',
+    tr: 'İzleme listesine ekle'
   },
-  step2Swing: { 
-    en: 'Study technical indicators like RSI, MACD, and moving averages', 
-    tr: 'RSI, MACD ve hareketli ortalamalar gibi teknik göstergeleri inceleyin' 
+  watchlist: {
+    en: 'Watchlist',
+    tr: 'İzleme Listesi'
   },
-  step3Swing: { 
-    en: 'Buy during downtrends when you believe the price is near bottom', 
-    tr: 'Fiyatın dibe yakın olduğuna inandığınızda düşüş trendleri sırasında satın alın' 
+  add: {
+    en: 'Add',
+    tr: 'Ekle'
   },
-  step4Swing: { 
-    en: 'Sell when the asset reaches what you consider a temporary peak', 
-    tr: 'Varlık geçici bir zirveye ulaştığını düşündüğünüzde satın' 
-  },
-  
-  // Language switcher
-  language: { en: 'Language', tr: 'Dil' },
-  english: { en: 'English', tr: 'İngilizce' },
-  turkish: { en: 'Turkish', tr: 'Türkçe' },
+  emptyWatchlist: {
+    en: 'Your watchlist is empty. Add coins from the market to track them here!',
+    tr: 'İzleme listeniz boş. Burada takip etmek için piyasadan coin ekleyin!'
+  }
 };
 
-// Create context type
-type LanguageContextType = {
+interface LanguageContextType {
   language: Language;
+  setLanguage: (lang: Language) => void;
   t: (key: string) => string;
-  changeLanguage: (lang: Language) => void;
-};
+}
 
-// Create context with default values
-const LanguageContext = createContext<LanguageContextType>({
-  language: 'en',
-  t: () => '',
-  changeLanguage: () => {},
-});
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-// Create provider component
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  // Try to get language from local storage or default to 'en'
-  const [language, setLanguage] = useState<Language>(() => {
-    const storedLanguage = localStorage.getItem('language');
-    return (storedLanguage === 'tr' ? 'tr' : 'en') as Language;
-  });
+  const [language, setLanguage] = useState<Language>('en');
 
-  // Update local storage when language changes
+  // Load language preference from localStorage
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('language');
+    if (savedLanguage === 'en' || savedLanguage === 'tr') {
+      setLanguage(savedLanguage);
+    }
+  }, []);
+
+  // Save language preference to localStorage
   useEffect(() => {
     localStorage.setItem('language', language);
   }, [language]);
@@ -182,23 +141,23 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   // Translation function
   const t = (key: string): string => {
     if (!translations[key]) {
-      console.warn(`Translation key "${key}" not found!`);
+      console.warn(`Translation key not found: ${key}`);
       return key;
     }
     return translations[key][language];
   };
 
-  // Change language function
-  const changeLanguage = (lang: Language) => {
-    setLanguage(lang);
-  };
-
   return (
-    <LanguageContext.Provider value={{ language, t, changeLanguage }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );
 };
 
-// Custom hook for using language context
-export const useLanguage = () => useContext(LanguageContext);
+export const useLanguage = (): LanguageContextType => {
+  const context = useContext(LanguageContext);
+  if (context === undefined) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+};

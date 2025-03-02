@@ -2,13 +2,14 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
+import { SortField, SortDirection } from "@/utils/cryptoFilterUtils";
 
 interface SearchBarProps {
   searchTerm: string;
   onSearch: (value: string) => void;
-  sortBy: "rank" | "name" | "price" | "change";
-  sortDir: "asc" | "desc";
-  onSort: (field: "rank" | "name" | "price" | "change") => void;
+  sortBy: SortField;
+  sortDir: SortDirection;
+  onSort: (field: SortField) => void;
 }
 
 export default function SearchBar({ 
@@ -33,7 +34,7 @@ export default function SearchBar({
             key={field}
             variant="outline"
             size="sm"
-            onClick={() => onSort(field as "rank" | "name" | "price" | "change")}
+            onClick={() => onSort(field as SortField)}
             className={sortBy === field ? "bg-primary text-primary-foreground" : ""}
           >
             {field.charAt(0).toUpperCase() + field.slice(1)}

@@ -43,7 +43,7 @@ export default function AuthLayout({ children, requireAdmin = false }: AuthLayou
           <ol className="list-decimal ml-5 mt-2 text-sm text-yellow-700">
             <li>Go to the Clerk Dashboard</li>
             <li>Find your user in the Users section</li>
-            <li>Edit the Public Metadata to include: "role": "admin"</li>
+            <li>Edit the Public Metadata to include: {"role": "admin"}</li>
             <li>Save the changes</li>
           </ol>
         </div>

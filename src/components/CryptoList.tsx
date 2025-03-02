@@ -1,19 +1,15 @@
-
 import { useState } from "react";
 import { CryptoData } from "@/lib/types";
 import CryptoCard from "./CryptoCard";
 import SearchBar from "./SearchBar";
 import CompareView from "./CompareView";
-import { Star, Spinner } from "lucide-react";
+import { Star, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useUser } from "@clerk/clerk-react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Loader } from "lucide-react";
-
-
 
 interface CryptoListProps {
   cryptos: CryptoData[];
@@ -39,6 +35,9 @@ export default function CryptoList({
   const { t } = useLanguage();
   const [processingIds, setProcessingIds] = useState<string[]>([]);
 
+  const isInWatchlist = (crypto: CryptoData) => 
+    watchlist && Array.isArray(watchlist) && watchlist.some(item => item.cryptoId === crypto.id);
+
   const toggleWatchlist = async (crypto: CryptoData) => {
     if (!isSignedIn || !user) {
       toast({
@@ -50,8 +49,6 @@ export default function CryptoList({
     }
 
     // Prevent multiple clicks on the same crypto
-
-
     if (processingIds.includes(crypto.id)) {
       return;
     }
@@ -60,12 +57,11 @@ export default function CryptoList({
       setProcessingIds(prev => [...prev, crypto.id]);  
       
       // Check if the crypto is already in the watchlist
-      const isInWatchlist = watchlist && Array.isArray(watchlist) && 
-        watchlist.some(item => item.cryptoId === crypto.id);
+      const isWatchlisted = isInWatchlist(crypto);
       
       let newWatchlist;
       
-      if (isInWatchlist) {
+      if (isWatchlisted) {
         // Remove from watchlist
         newWatchlist = watchlist.filter(item => item.cryptoId !== crypto.id);
       } else {
@@ -129,8 +125,8 @@ export default function CryptoList({
 
       // Show success notification
       toast({
-        title: isInWatchlist ? t('removedFromWatchlist') : t('addedToWatchlist'),
-        description: isInWatchlist 
+        title: isWatchlisted ? t('removedFromWatchlist') : t('addedToWatchlist'),
+        description: isWatchlisted 
           ? `${crypto.name} ${t('hasBeenRemoved')}` 
           : `${crypto.name} ${t('hasBeenAdded')}`,
       });
@@ -182,9 +178,6 @@ export default function CryptoList({
   const isCompareMode = selectedCryptos[0] !== null;
   const isInSelectedCryptos = (crypto: CryptoData) => 
     selectedCryptos[0]?.id === crypto.id || selectedCryptos[1]?.id === crypto.id;
-
-  const isInWatchlist = (crypto: CryptoData) => 
-    watchlist && Array.isArray(watchlist) && watchlist.some(item => item.cryptoId === crypto.id);
 
   const handleSort = (sortField: "rank" | "name" | "price" | "change") => {
     if (sortBy === sortField) {

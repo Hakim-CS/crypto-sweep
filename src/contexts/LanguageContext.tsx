@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-type Language = 'en' | 'tr';
+export type Language = 'en' | 'tr';
 
 type Translations = {
   [key: string]: {
@@ -111,6 +110,19 @@ const translations: Translations = {
   emptyWatchlist: {
     en: 'Your watchlist is empty. Add coins from the market to track them here!',
     tr: 'İzleme listeniz boş. Burada takip etmek için piyasadan coin ekleyin!'
+  },
+  // Language names for the switcher
+  english: {
+    en: 'English',
+    tr: 'İngilizce'
+  },
+  turkish: {
+    en: 'Turkish',
+    tr: 'Türkçe'
+  },
+  language: {
+    en: 'Language',
+    tr: 'Dil'
   }
 };
 

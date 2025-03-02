@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useLanguage, Language } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Globe } from 'lucide-react';
 import {
   DropdownMenu,
@@ -11,11 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const LanguageSwitcher = () => {
-  const { language, changeLanguage, t } = useLanguage();
-
-  const handleLanguageChange = (lang: Language) => {
-    changeLanguage(lang);
-  };
+  const { language, setLanguage, t } = useLanguage();
 
   return (
     <DropdownMenu>
@@ -27,13 +23,13 @@ const LanguageSwitcher = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem 
-          onClick={() => handleLanguageChange('en')}
+          onClick={() => setLanguage('en')}
           className={language === 'en' ? 'bg-muted' : ''}
         >
           {t('english')}
         </DropdownMenuItem>
         <DropdownMenuItem 
-          onClick={() => handleLanguageChange('tr')}
+          onClick={() => setLanguage('tr')}
           className={language === 'tr' ? 'bg-muted' : ''}
         >
           {t('turkish')}

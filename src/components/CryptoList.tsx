@@ -50,20 +50,14 @@ export default function CryptoList({
     }
 
     // Prevent multiple clicks on the same crypto
-    {processingIds.includes(crypto.id) ? (
-  <Loader className="h-4 w-4 animate-spin" />
-) : isInWatchlist(crypto) ? (
-  <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-) : (
-  <Star className="h-5 w-5" />
-)}
 
-  /*  if (processingIds.includes(crypto.id)) {
+
+    if (processingIds.includes(crypto.id)) {
       return;
     }
 
     try {
-      setProcessingIds(prev => [...prev, crypto.id]);  */
+      setProcessingIds(prev => [...prev, crypto.id]);  
       
       // Check if the crypto is already in the watchlist
       const isInWatchlist = watchlist && Array.isArray(watchlist) && 
@@ -242,7 +236,7 @@ export default function CryptoList({
                 disabled={processingIds.includes(crypto.id)}
               >
                 {processingIds.includes(crypto.id) ? (
-                  <Spinner className="h-4 w-4 animate-spin" />
+                  <Loader className="h-4 w-4 animate-spin" />
                 ) : isInWatchlist(crypto) ? (
                   <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                 ) : (

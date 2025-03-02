@@ -4,7 +4,7 @@ import { CryptoData } from "@/lib/types";
 import CryptoCard from "./CryptoCard";
 import SearchBar from "./SearchBar";
 import CompareView from "./CompareView";
-import { Star } from "lucide-react";
+import { Star, Spinner } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useUser } from "@clerk/clerk-react";
@@ -75,6 +75,8 @@ export default function CryptoList({
 
       // Format the Clerk user ID for Supabase by removing the "user_" prefix
       const formattedUserId = user.id.replace('user_', '');
+      
+      console.log('Using formatted user ID for Supabase:', formattedUserId);
 
       // Fetch the user's portfolio
       const { data: portfolioData, error: fetchError } = await supabase
@@ -83,12 +85,16 @@ export default function CryptoList({
         .eq('user_id', formattedUserId)
         .maybeSingle();
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw new Error(`Error fetching portfolio: ${fetchError.message}`);
+      if (fetchError) {
+        console.error('Error fetching portfolio:', fetchError);
+        if (fetchError.code !== 'PGRST116') {
+          throw new Error(`Error fetching portfolio: ${fetchError.message}`);
+        }
       }
 
       if (!portfolioData) {
         // Create a new portfolio if it doesn't exist
+        console.log('Creating new portfolio for user:', formattedUserId);
         const { error: createError } = await supabase
           .from('portfolios')
           .insert({
@@ -99,16 +105,19 @@ export default function CryptoList({
           });
 
         if (createError) {
+          console.error('Error creating portfolio:', createError);
           throw new Error(`Error creating portfolio: ${createError.message}`);
         }
       } else {
         // Update existing portfolio
+        console.log('Updating existing portfolio for user:', formattedUserId);
         const { error: updateError } = await supabase
           .from('portfolios')
           .update({ watchlist: newWatchlist })
           .eq('user_id', formattedUserId);
 
         if (updateError) {
+          console.error('Error updating watchlist:', updateError);
           throw new Error(`Error updating watchlist: ${updateError.message}`);
         }
       }
@@ -221,7 +230,9 @@ export default function CryptoList({
                 title={isInWatchlist(crypto) ? t('removeFromWatchlist') : t('addToWatchlist')}
                 disabled={processingIds.includes(crypto.id)}
               >
-                {isInWatchlist(crypto) ? (
+                {processingIds.includes(crypto.id) ? (
+                  <Spinner className="h-4 w-4 animate-spin" />
+                ) : isInWatchlist(crypto) ? (
                   <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                 ) : (
                   <Star className="h-5 w-5" />

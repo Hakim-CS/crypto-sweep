@@ -1,7 +1,6 @@
 
 import { useUser } from "@clerk/clerk-react";
 import { Navigate } from "react-router-dom";
-import { Spinner } from "lucide-react";
 import { Loader } from "lucide-react";
 
 interface AuthLayoutProps {
@@ -39,7 +38,7 @@ export default function AuthLayout({ children, requireAdmin = false }: AuthLayou
         <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
           <h2 className="text-lg font-semibold text-yellow-800">How to get admin access:</h2>
           <p className="text-sm text-yellow-700 mt-2">
-            Admin access is controlled through Clerk's user metadata. To grant admin access:
+            Admin access is controlled through Clerk&apos;s user metadata. To grant admin access:
           </p>
           <ol className="list-decimal ml-5 mt-2 text-sm text-yellow-700">
             <li>Go to the Clerk Dashboard</li>

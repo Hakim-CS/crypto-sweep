@@ -11,6 +11,9 @@ import { useUser } from "@clerk/clerk-react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Loader } from "lucide-react";
+
+
 
 interface CryptoListProps {
   cryptos: CryptoData[];
@@ -47,12 +50,20 @@ export default function CryptoList({
     }
 
     // Prevent multiple clicks on the same crypto
-    if (processingIds.includes(crypto.id)) {
+    {processingIds.includes(crypto.id) ? (
+  <Loader className="h-4 w-4 animate-spin" />
+) : isInWatchlist(crypto) ? (
+  <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+) : (
+  <Star className="h-5 w-5" />
+)}
+
+  /*  if (processingIds.includes(crypto.id)) {
       return;
     }
 
     try {
-      setProcessingIds(prev => [...prev, crypto.id]);
+      setProcessingIds(prev => [...prev, crypto.id]);  */
       
       // Check if the crypto is already in the watchlist
       const isInWatchlist = watchlist && Array.isArray(watchlist) && 

@@ -64,13 +64,16 @@ export default function WalletPage() {
       }
 
       try {
-        console.log("Fetching portfolio for user:", user.id);
+        // Format the Clerk user ID for Supabase by removing the "user_" prefix
+        const formattedUserId = user.id.replace('user_', '');
+        
+        console.log("Fetching portfolio for formatted user ID:", formattedUserId);
       
         // Check if user has a portfolio
         const { data, error } = await supabase
           .from('portfolios')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('user_id', formattedUserId)
           .maybeSingle();
 
         console.log("Portfolio query result:", { data, error });
@@ -82,7 +85,7 @@ export default function WalletPage() {
             console.log("Portfolio doesn't exist, creating a new one");
             // Portfolio doesn't exist, create a new one
             const newPortfolio = { 
-              user_id: user.id, 
+              user_id: formattedUserId, 
               assets: [], 
               watchlist: [], 
               balance: 1000 
@@ -181,6 +184,8 @@ export default function WalletPage() {
     }
 
     try {
+      // Format the Clerk user ID for Supabase
+      const formattedUserId = user.id.replace('user_', '');
       console.log("Starting transaction with:", { selectedCrypto, amount, transactionType, amountType });
     
       const crypto = cryptos?.find(c => c.id === selectedCrypto);
@@ -239,7 +244,7 @@ export default function WalletPage() {
 
     // Create transaction record
     const transaction = {
-      user_id: user.id,
+      user_id: formattedUserId,
       crypto_id: selectedCrypto,
       amount: transactionType === "sell" ? -coinAmount : coinAmount,
       price: crypto.current_price,
@@ -295,7 +300,7 @@ export default function WalletPage() {
         assets: updatedPortfolio.assets,
         balance: updatedPortfolio.balance
       })
-      .eq('user_id', user.id);
+      .eq('user_id', formattedUserId);
 
     if (portfolioError) {
       console.error('Portfolio update error:', portfolioError);
@@ -349,11 +354,13 @@ export default function WalletPage() {
     }
 
     try {
+      // Format the Clerk user ID for Supabase
+      const formattedUserId = user.id.replace('user_', '');
       console.log("Processing deposit of:", depositAmountNum);
       
       // Create transaction record
       const transaction = {
-        user_id: user.id,
+        user_id: formattedUserId,
         crypto_id: null,
         amount: depositAmountNum,
         price: null,
@@ -382,7 +389,7 @@ export default function WalletPage() {
       const { error: portfolioError } = await supabase
         .from('portfolios')
         .update({ balance: newBalance })
-        .eq('user_id', user.id);
+        .eq('user_id', formattedUserId);
 
       if (portfolioError) {
         console.error('Portfolio update error during deposit:', portfolioError);
@@ -445,11 +452,13 @@ export default function WalletPage() {
     }
 
     try {
+      // Format the Clerk user ID for Supabase
+      const formattedUserId = user.id.replace('user_', '');
       console.log("Processing withdrawal of:", withdrawAmountNum);
       
       // Create transaction record
       const transaction = {
-        user_id: user.id,
+        user_id: formattedUserId,
         crypto_id: null,
         amount: -withdrawAmountNum, // Negative amount for withdrawals
         price: null,
@@ -478,7 +487,7 @@ export default function WalletPage() {
       const { error: portfolioError } = await supabase
         .from('portfolios')
         .update({ balance: newBalance })
-        .eq('user_id', user.id);
+        .eq('user_id', formattedUserId);
 
       if (portfolioError) {
         console.error('Portfolio update error during withdrawal:', portfolioError);
@@ -524,6 +533,9 @@ export default function WalletPage() {
     if (!user?.id) return;
 
     try {
+      // Format the Clerk user ID for Supabase
+      const formattedUserId = user.id.replace('user_', '');
+      
       const updatedPortfolio = {
         ...portfolio,
         watchlist: newWatchlist
@@ -532,7 +544,7 @@ export default function WalletPage() {
       const { error } = await supabase
         .from('portfolios')
         .update({ watchlist: newWatchlist })
-        .eq('user_id', user.id);
+        .eq('user_id', formattedUserId);
 
       if (error) {
         console.error('Watchlist update error:', error);

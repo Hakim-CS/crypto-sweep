@@ -73,11 +73,14 @@ export default function CryptoList({
         onUpdateWatchlist(newWatchlist);
       }
 
+      // Format the Clerk user ID for Supabase by removing the "user_" prefix
+      const formattedUserId = user.id.replace('user_', '');
+
       // Fetch the user's portfolio
       const { data: portfolioData, error: fetchError } = await supabase
         .from('portfolios')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', formattedUserId)
         .maybeSingle();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
@@ -89,7 +92,7 @@ export default function CryptoList({
         const { error: createError } = await supabase
           .from('portfolios')
           .insert({
-            user_id: user.id,
+            user_id: formattedUserId,
             watchlist: newWatchlist,
             assets: [],
             balance: 1000
@@ -103,7 +106,7 @@ export default function CryptoList({
         const { error: updateError } = await supabase
           .from('portfolios')
           .update({ watchlist: newWatchlist })
-          .eq('user_id', user.id);
+          .eq('user_id', formattedUserId);
 
         if (updateError) {
           throw new Error(`Error updating watchlist: ${updateError.message}`);

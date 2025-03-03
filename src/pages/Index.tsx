@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
@@ -119,29 +118,31 @@ export default function Index() {
   };
 
   if (isLoading || !cryptos) {
-    return <div>Loading...</div>;
+    return <div className="flex justify-center items-center min-h-[60vh]">Loading...</div>;
   }
 
   const isCompareMode = selectedCryptos[0] !== null || selectedCryptos[1] !== null;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold mb-4">
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+      <div className="text-center mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-4">
           {isSignedIn 
             ? `${isAdmin ? t('welcomeAdmin') : t('welcomeBack')}, ${user?.firstName || ''}`
             : t('cryptoTracker')}
         </h1>
-        <p className="text-xl text-muted-foreground mb-8">
+        <p className="text-lg sm:text-xl text-muted-foreground mb-4 sm:mb-8">
           {isSignedIn 
             ? t('trackPortfolio')
             : t('signInToManage')}
         </p>
-        <div className="flex gap-4 justify-center">
+        <div className="flex flex-wrap gap-3 justify-center">
           {isSignedIn && (
             <Button 
               onClick={() => navigate('/wallet')} 
-              className="mb-8"
+              className="mb-4 sm:mb-8"
+              size="sm"
+              className="w-full sm:w-auto"
             >
               {t('goToWallet')}
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -160,18 +161,18 @@ export default function Index() {
         </div>
       </div>
     
-
       {selectedCoin && !isCompareMode && (
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <Button 
             variant="outline" 
             onClick={() => setSelectedCoin(null)}
             className="mb-4"
+            size="sm"
           >
             {t('backToList')}
           </Button>
           {isChartLoading ? (
-            <div className="flex justify-center items-center h-96">
+            <div className="flex justify-center items-center h-48 sm:h-72 md:h-96">
               <p>{t('loadingChart')}</p>
             </div>
           ) : (

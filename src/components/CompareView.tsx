@@ -84,52 +84,60 @@ export default function CompareView({
   };
 
   return (
-    <div className="w-full space-y-6 slide-in">
+    <div className="w-full space-y-4 sm:space-y-6 slide-in">
       <Card className="glass">
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
-              <CardTitle>Comparison Analysis</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Comparison Analysis</CardTitle>
               <CardDescription>Detailed metrics comparison</CardDescription>
             </div>
             <button
               onClick={onClearComparison}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="text-sm text-muted-foreground hover:text-foreground mt-2 sm:mt-0"
             >
               Clear
             </button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <CryptoCard crypto={crypto1} className="!cursor-default" />
             <CryptoCard crypto={crypto2} className="!cursor-default" />
           </div>
           
           <Card className="glass">
             <CardHeader>
-              <CardTitle className="text-lg">Performance Insight</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Performance Insight</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {getPerformanceInsight()}
               </p>
             </CardContent>
           </Card>
 
-          <div className="space-y-4">
-            {metrics.map((metric) => (
-              <div key={metric.label} className="grid grid-cols-4 gap-4 items-center py-2 border-b border-border/50">
-                <span className="text-sm text-muted-foreground">{metric.label}</span>
-                <span className="text-sm font-medium">{metric.value1}</span>
-                <span className="text-sm font-medium">{metric.value2}</span>
-                <span className={`text-sm font-medium ${
-                  metric.difference > 0 ? "text-green-500" : "text-red-500"
-                }`}>
-                  {metric.difference.toFixed(2)}%
-                </span>
+          <div className="overflow-x-auto">
+            <div className="min-w-[600px] space-y-4">
+              <div className="grid grid-cols-4 gap-2 sm:gap-4 items-center py-2 border-b border-border/50 text-xs sm:text-sm font-semibold">
+                <span>Metric</span>
+                <span>{crypto1.name}</span>
+                <span>{crypto2.name}</span>
+                <span>Difference</span>
               </div>
-            ))}
+              {metrics.map((metric) => (
+                <div key={metric.label} className="grid grid-cols-4 gap-2 sm:gap-4 items-center py-2 border-b border-border/50">
+                  <span className="text-xs sm:text-sm text-muted-foreground">{metric.label}</span>
+                  <span className="text-xs sm:text-sm font-medium">{metric.value1}</span>
+                  <span className="text-xs sm:text-sm font-medium">{metric.value2}</span>
+                  <span className={`text-xs sm:text-sm font-medium ${
+                    metric.difference > 0 ? "text-green-500" : "text-red-500"
+                  }`}>
+                    {metric.difference.toFixed(2)}%
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>

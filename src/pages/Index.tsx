@@ -140,9 +140,9 @@ export default function Index() {
           {isSignedIn && (
             <Button 
               onClick={() => navigate('/wallet')} 
-              className="mb-4 sm:mb-8"
+              className="mb-4 sm:mb-8 w-full sm:w-auto"
               size="sm"
-              className="w-full sm:w-auto"
+            
             >
               {t('goToWallet')}
               <ArrowRight className="ml-2 h-4 w-4" />

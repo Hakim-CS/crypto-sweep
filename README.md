@@ -22,10 +22,10 @@ Follow these steps:
 
 ```sh
 # Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+git clone https://github.com/Hakim-CS/hakim-cs.github.io.git
 
 # Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+cd <YOUR_PR
 
 # Step 3: Install the necessary dependencies.
 npm i

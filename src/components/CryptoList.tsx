@@ -10,16 +10,12 @@ interface CryptoListProps {
   cryptos: CryptoData[];
   onSelectCrypto?: (crypto: CryptoData | null) => void;
   selectedCryptos?: [CryptoData | null, CryptoData | null];
-  watchlist?: Array<{ cryptoId: string }>;
-  onUpdateWatchlist?: (newWatchlist: Array<{ cryptoId: string }>) => void;
 }
 
 export default function CryptoList({ 
   cryptos, 
   onSelectCrypto,
-  selectedCryptos = [null, null],
-  watchlist = [],
-  onUpdateWatchlist
+  selectedCryptos = [null, null]
 }: CryptoListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortField>("rank");
@@ -80,8 +76,6 @@ export default function CryptoList({
           <CryptoItem
             key={crypto.id}
             crypto={crypto}
-            watchlist={watchlist}
-            onUpdateWatchlist={onUpdateWatchlist}
             onSelectCrypto={handleSelectCrypto}
             isSelected={isInSelectedCryptos(crypto)}
           />

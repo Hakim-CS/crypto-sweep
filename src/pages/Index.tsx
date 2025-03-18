@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,6 @@ import { useState, useEffect } from "react";
 import { CryptoData, ChartData, TimeFrame } from "@/lib/types";
 import { useToast } from "@/components/ui/use-toast";
 import PriceChart from "@/components/PriceChart";
-import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Index() {
@@ -22,7 +22,6 @@ export default function Index() {
   const [timeFrame, setTimeFrame] = useState<TimeFrame>("24h");
   const { toast } = useToast();
   const isAdmin = user?.publicMetadata?.role === 'admin';
-  const [watchlist, setWatchlist] = useState<Array<{ cryptoId: string }>>([]);
   
   // Convert timeFrame to days for API request
   const timeFrameToDays = (tf: TimeFrame): number => {
@@ -39,31 +38,6 @@ export default function Index() {
     selectedCoin?.id || "",
     timeFrameToDays(timeFrame)
   );
-
-  // Fetch user's watchlist when signed in
-  useEffect(() => {
-    const fetchWatchlist = async () => {
-      if (!isSignedIn || !user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('portfolios')
-          .select('watchlist')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error fetching watchlist:', error);
-        } else if (data) {
-          setWatchlist(data.watchlist || []);
-        }
-      } catch (err) {
-        console.error('Error in watchlist fetch:', err);
-      }
-    };
-
-    fetchWatchlist();
-  }, [isSignedIn, user]);
 
   // Update chart data when historical data is loaded
   useEffect(() => {
@@ -142,22 +116,11 @@ export default function Index() {
               onClick={() => navigate('/wallet')} 
               className="mb-4 sm:mb-8 w-full sm:w-auto"
               size="sm"
-            
             >
               {t('goToWallet')}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           )}
-          {/*
-          <Button 
-            onClick={() => navigate('/education')} 
-            className="mb-8"
-            variant="outline"
-          >
-            {t('education')}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-            */}
         </div>
       </div>
     
@@ -189,8 +152,6 @@ export default function Index() {
         cryptos={cryptos}
         onSelectCrypto={handleSelectCrypto}
         selectedCryptos={selectedCryptos}
-        watchlist={watchlist}
-        onUpdateWatchlist={setWatchlist}
       />
     </div>
   );

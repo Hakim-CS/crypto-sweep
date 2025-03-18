@@ -59,8 +59,10 @@ export default function CryptoList({
           return;
         }
 
-        if (data?.watchlist) {
-          setWatchlist(data.watchlist);
+       
+      if (data?.watchlist) {
+      const formattedWatchlist = data.watchlist.map((item: any) => ({ cryptoId: item.cryptoId }));
+      setWatchlist(formattedWatchlist);
         } else {
           setWatchlist([]);
         }

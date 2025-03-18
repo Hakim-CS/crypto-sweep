@@ -1,10 +1,15 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useUser } from "@clerk/clerk-react";
 import { CryptoData } from "@/lib/types";
 import SearchBar from "./SearchBar";
 import CompareView from "./CompareView";
 import CryptoItem from "./CryptoItem";
+import { useToast } from "@/components/ui/use-toast";
 import { filterCryptos, sortCryptos, type SortField, type SortDirection } from "@/utils/cryptoFilterUtils";
+import { supabase } from "@/integrations/supabase/client";
+import { formatClerkUserId, updateWatchlistInSupabase } from "@/utils/watchlistUtils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CryptoListProps {
   cryptos: CryptoData[];
@@ -20,6 +25,10 @@ export default function CryptoList({
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortField>("rank");
   const [sortDir, setSortDir] = useState<SortDirection>("asc");
+  const [watchlist, setWatchlist] = useState<Array<{ cryptoId: string }>>([]);
+  const { isSignedIn, user } = useUser();
+  const { toast } = useToast();
+  const { t } = useLanguage();
 
   // Filter and sort the cryptos
   const filteredCryptos = filterCryptos(cryptos, searchTerm);
@@ -28,6 +37,40 @@ export default function CryptoList({
   // Check if a crypto is in selected cryptos for comparison
   const isInSelectedCryptos = (crypto: CryptoData) => 
     selectedCryptos[0]?.id === crypto.id || selectedCryptos[1]?.id === crypto.id;
+
+  // Fetch user's watchlist from Supabase when logged in
+  useEffect(() => {
+    const fetchWatchlist = async () => {
+      if (!isSignedIn || !user) {
+        setWatchlist([]);
+        return;
+      }
+
+      try {
+        const formattedUserId = formatClerkUserId(user.id);
+        const { data, error } = await supabase
+          .from('portfolios')
+          .select('watchlist')
+          .eq('user_id', formattedUserId)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching watchlist:', error);
+          return;
+        }
+
+        if (data?.watchlist) {
+          setWatchlist(data.watchlist);
+        } else {
+          setWatchlist([]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch watchlist:', err);
+      }
+    };
+
+    fetchWatchlist();
+  }, [isSignedIn, user]);
 
   // Handle sorting
   const handleSort = (sortField: SortField) => {
@@ -50,6 +93,53 @@ export default function CryptoList({
   const handleSelectCrypto = (crypto: CryptoData) => {
     if (onSelectCrypto) {
       onSelectCrypto(crypto);
+    }
+  };
+
+  // Handle toggling a crypto in the watchlist
+  const handleToggleWatchlist = async (crypto: CryptoData) => {
+    if (!isSignedIn || !user) {
+      toast({
+        title: t('loginRequired'),
+        description: t('loginToManageWatchlist'),
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Check if the crypto is already in the watchlist
+      const isInList = watchlist.some(item => item.cryptoId === crypto.id);
+      let newWatchlist: Array<{ cryptoId: string }>;
+
+      if (isInList) {
+        // Remove from watchlist
+        newWatchlist = watchlist.filter(item => item.cryptoId !== crypto.id);
+        toast({
+          title: t('removedFromWatchlist'),
+          description: `${crypto.name} ${t('hasBeenRemoved')}`,
+        });
+      } else {
+        // Add to watchlist
+        newWatchlist = [...watchlist, { cryptoId: crypto.id }];
+        toast({
+          title: t('addedToWatchlist'),
+          description: `${crypto.name} ${t('hasBeenAdded')}`,
+        });
+      }
+
+      // Update local state
+      setWatchlist(newWatchlist);
+
+      // Update in Supabase
+      await updateWatchlistInSupabase(user.id, newWatchlist);
+    } catch (err) {
+      console.error('Failed to update watchlist:', err);
+      toast({
+        title: t('error'),
+        description: t('failedToUpdateWatchlist'),
+        variant: "destructive"
+      });
     }
   };
 
@@ -78,6 +168,8 @@ export default function CryptoList({
             crypto={crypto}
             onSelectCrypto={handleSelectCrypto}
             isSelected={isInSelectedCryptos(crypto)}
+            watchlist={watchlist}
+            onToggleWatchlist={handleToggleWatchlist}
           />
         ))}
       </div>

@@ -1,7 +1,6 @@
 
 import { CryptoData } from "@/lib/types";
-import { supabase } from "@/lib/supabase";
-import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 // Check if a crypto is in the watchlist
 export const isInWatchlist = (

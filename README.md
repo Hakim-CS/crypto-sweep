@@ -9,7 +9,7 @@
 There are several ways of editing your application. 
 
 
-
+ 
 
 Changes made via Lovable will be committed automatically to this repo.
 

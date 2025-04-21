@@ -58,6 +58,16 @@ export interface Portfolio {
   watchlist: WatchlistItem[];
 }
 
+export interface Transaction {
+  id: number;
+  user_id: string;
+  crypto_id: string;
+  amount: number;
+  price: number;
+  timestamp: string;
+  type: string;
+}
+
 export interface ChartPreferences {
   type: 'line' | 'candlestick' | 'bar';
   showVolume: boolean;

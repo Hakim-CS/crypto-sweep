@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -72,7 +71,6 @@ export default function PortfolioManager({ cryptoList }: PortfolioManagerProps) 
     },
   });
 
-  // Fetch portfolio and transactions data when user is signed in
   useEffect(() => {
     const fetchPortfolioData = async () => {
       if (!isSignedIn || !user) return;
@@ -81,7 +79,6 @@ export default function PortfolioManager({ cryptoList }: PortfolioManagerProps) 
       try {
         const formattedUserId = formatClerkUserId(user.id);
         
-        // Fetch portfolio data
         const { data: portfolioData, error: portfolioError } = await supabase
           .from('portfolios')
           .select('assets, watchlist')
@@ -91,13 +88,20 @@ export default function PortfolioManager({ cryptoList }: PortfolioManagerProps) 
         if (portfolioError) throw portfolioError;
         
         if (portfolioData) {
+          const assets = Array.isArray(portfolioData.assets) 
+            ? portfolioData.assets as PortfolioAsset[]
+            : [];
+            
+          const watchlist = Array.isArray(portfolioData.watchlist)
+            ? portfolioData.watchlist as WatchlistItem[]
+            : [];
+            
           setPortfolio({
-            assets: Array.isArray(portfolioData.assets) ? portfolioData.assets : [],
-            watchlist: Array.isArray(portfolioData.watchlist) ? portfolioData.watchlist : []
+            assets,
+            watchlist
           });
         }
         
-        // Fetch transactions
         const { data: transactionsData, error: transactionsError } = await supabase
           .from('transactions')
           .select('*')
@@ -141,7 +145,7 @@ export default function PortfolioManager({ cryptoList }: PortfolioManagerProps) 
           user_id: formattedUserId, 
           assets: newPortfolio.assets,
           watchlist: newPortfolio.watchlist
-        }, { onConflict: 'user_id' });
+        });
         
       if (error) throw error;
       
@@ -173,7 +177,6 @@ export default function PortfolioManager({ cryptoList }: PortfolioManagerProps) 
       const buyPrice = Number(values.buyPrice);
       const timestamp = Date.now();
       
-      // Add asset to portfolio
       const asset: PortfolioAsset = {
         cryptoId: values.cryptoId,
         amount,
@@ -186,10 +189,8 @@ export default function PortfolioManager({ cryptoList }: PortfolioManagerProps) 
         assets: [...portfolio.assets, asset],
       };
       
-      // Save new portfolio
       await savePortfolio(newPortfolio);
       
-      // Record transaction
       const { error } = await supabase
         .from('transactions')
         .insert({
@@ -202,7 +203,6 @@ export default function PortfolioManager({ cryptoList }: PortfolioManagerProps) 
         
       if (error) throw error;
       
-      // Update transactions list
       const crypto = cryptoList.find(c => c.id === values.cryptoId);
       setTransactions(prev => [{
         id: Date.now(),
@@ -243,10 +243,8 @@ export default function PortfolioManager({ cryptoList }: PortfolioManagerProps) 
         assets: newAssets
       };
       
-      // Save updated portfolio
       await savePortfolio(newPortfolio);
       
-      // Record sell transaction
       const formattedUserId = formatClerkUserId(user.id);
       const { error } = await supabase
         .from('transactions')
@@ -260,7 +258,6 @@ export default function PortfolioManager({ cryptoList }: PortfolioManagerProps) 
         
       if (error) throw error;
       
-      // Update transactions list
       const crypto = cryptoList.find(c => c.id === asset.cryptoId);
       setTransactions(prev => [{
         id: Date.now(),

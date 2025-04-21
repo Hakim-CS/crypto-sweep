@@ -59,10 +59,19 @@ export default function CryptoList({
           return;
         }
 
-       
-      if (data?.watchlist) {
-      const formattedWatchlist = data.watchlist.map((item: any) => ({ cryptoId: item.cryptoId }));
-      setWatchlist(formattedWatchlist);
+        if (data?.watchlist) {
+          // Ensure the watchlist data is properly formatted as an array of { cryptoId: string }
+          const formattedWatchlist = Array.isArray(data.watchlist) 
+            ? data.watchlist.map((item: any) => {
+                if (typeof item === 'object' && item !== null && 'cryptoId' in item) {
+                  return { cryptoId: item.cryptoId };
+                }
+                // If we find an incorrectly formatted item, create a proper format
+                return { cryptoId: typeof item === 'string' ? item : String(item) };
+              })
+            : [];
+          
+          setWatchlist(formattedWatchlist);
         } else {
           setWatchlist([]);
         }

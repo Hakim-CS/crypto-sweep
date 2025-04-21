@@ -36,6 +36,7 @@ import { formatClerkUserId } from "@/utils/watchlistUtils";
 import { format } from "date-fns";
 import TransactionHistory from "./TransactionHistory";
 import PortfolioChart from "./PortfolioChart";
+import { Json } from "@/integrations/supabase/types";
 
 interface PortfolioManagerProps {
   cryptoList: CryptoData[];
@@ -140,13 +141,17 @@ export default function PortfolioManager({ cryptoList }: PortfolioManagerProps) 
     try {
       const formattedUserId = formatClerkUserId(user.id);
       
+      // Convert assets and watchlist to JSON serializable format
+      const assetsJson = newPortfolio.assets as unknown as Json;
+      const watchlistJson = newPortfolio.watchlist as unknown as Json;
+      
       const { error } = await supabase
         .from('portfolios')
-        .upsert([{ 
+        .upsert({
           user_id: formattedUserId, 
-          assets: newPortfolio.assets,
-          watchlist: newPortfolio.watchlist
-        }], { onConflict: 'user_id' });
+          assets: assetsJson,
+          watchlist: watchlistJson
+        }, { onConflict: 'user_id' });
         
       if (error) throw error;
       

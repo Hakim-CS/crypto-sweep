@@ -89,11 +89,11 @@ export default function PortfolioManager({ cryptoList }: PortfolioManagerProps) 
         
         if (portfolioData) {
           const assets = Array.isArray(portfolioData.assets) 
-            ? portfolioData.assets as PortfolioAsset[]
+            ? (portfolioData.assets as unknown) as PortfolioAsset[]
             : [];
             
           const watchlist = Array.isArray(portfolioData.watchlist)
-            ? portfolioData.watchlist as WatchlistItem[]
+            ? (portfolioData.watchlist as unknown) as WatchlistItem[]
             : [];
             
           setPortfolio({
@@ -145,7 +145,7 @@ export default function PortfolioManager({ cryptoList }: PortfolioManagerProps) 
           user_id: formattedUserId, 
           assets: newPortfolio.assets,
           watchlist: newPortfolio.watchlist
-        });
+        }, { onConflict: 'user_id' });
         
       if (error) throw error;
       

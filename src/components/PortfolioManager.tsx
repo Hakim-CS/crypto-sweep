@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -141,11 +142,11 @@ export default function PortfolioManager({ cryptoList }: PortfolioManagerProps) 
       
       const { error } = await supabase
         .from('portfolios')
-        .upsert({ 
+        .upsert([{ 
           user_id: formattedUserId, 
           assets: newPortfolio.assets,
           watchlist: newPortfolio.watchlist
-        }, { onConflict: 'user_id' });
+        }], { onConflict: 'user_id' });
         
       if (error) throw error;
       

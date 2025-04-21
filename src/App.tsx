@@ -16,6 +16,9 @@ import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
 import ThemeToggle from "./components/ThemeToggle";
 import LanguageSwitcher from "./components/LanguageSwitcher";
+import AppSidebar from "./components/AppSidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Menu } from "lucide-react";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -24,11 +27,15 @@ function Navigation() {
   const { isSignedIn } = useUser();
   const { t } = useLanguage();
 
+  // Hamburger only visible on mobile
   return (
     <div className="fixed z-10 top-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-b border-border">
       <div className="container mx-auto px-4 py-2 flex justify-between items-center">
         <div className="flex items-center gap-6">
-          <Link to="/" className="text-xl font-bold">{t('cryptoTracker')}</Link>
+          <SidebarTrigger className="md:hidden p-1 hover:bg-muted rounded transition" aria-label="Open menu">
+            <Menu className="h-6 w-6 mr-1" />
+          </SidebarTrigger>
+          <Link to="/" className="text-xl font-bold hover-scale">{t('cryptoTracker')}</Link>
           <nav className="hidden md:flex items-center gap-4">
             <Link to="/" className="hover:text-primary transition">{t('home')}</Link>
             {isSignedIn && (
@@ -69,26 +76,31 @@ function App() {
         <LanguageProvider>
           <TooltipProvider>
             <Router>
-              <div className="pt-14"> {/* Add padding to account for fixed navigation */}
-                <Navigation />
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/sign-in/*" element={<SignInPage />} />
-                  <Route path="/sign-up/*" element={<SignUpPage />} />
-                  <Route path="/education" element={<Education />} />
-                  <Route 
-                    path="/wallet" 
-                    element={
-                      <AuthLayout>
-                        <WalletPage />
-                      </AuthLayout>
-                    } 
-                  />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <Toaster />
-                <Sonner />
-              </div>
+              <SidebarProvider>
+                <div className="flex w-full min-h-screen">
+                  <AppSidebar />
+                  <main className="flex-1 pt-14 animate-fade-in">
+                    <Navigation />
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/sign-in/*" element={<SignInPage />} />
+                      <Route path="/sign-up/*" element={<SignUpPage />} />
+                      <Route path="/education" element={<Education />} />
+                      <Route 
+                        path="/wallet" 
+                        element={
+                          <AuthLayout>
+                            <WalletPage />
+                          </AuthLayout>
+                        } 
+                      />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                    <Toaster />
+                    <Sonner />
+                  </main>
+                </div>
+              </SidebarProvider>
             </Router>
           </TooltipProvider>
         </LanguageProvider>

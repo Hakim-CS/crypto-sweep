@@ -5,22 +5,27 @@ import { CryptoData } from "@/lib/types";
 import SearchBar from "./SearchBar";
 import CompareView from "./CompareView";
 import CryptoItem from "./CryptoItem";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { filterCryptos, sortCryptos, type SortField, type SortDirection } from "@/utils/cryptoFilterUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { formatClerkUserId, updateWatchlistInSupabase } from "@/utils/watchlistUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CryptoListProps {
   cryptos: CryptoData[];
   onSelectCrypto?: (crypto: CryptoData | null) => void;
   selectedCryptos?: [CryptoData | null, CryptoData | null];
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
 export default function CryptoList({ 
   cryptos, 
   onSelectCrypto,
-  selectedCryptos = [null, null]
+  selectedCryptos = [null, null],
+  isLoading = false,
+  error = null,
 }: CryptoListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortField>("rank");
@@ -154,8 +159,27 @@ export default function CryptoList({
     }
   };
 
+  // If loading, use animated skeletons!
+  if (isLoading) {
+    return (
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton className="h-32 rounded-lg bg-muted mb-4" key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full text-center py-20 text-destructive animate-fade-in">
+        {t('failedToFetchCryptos')}
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <SearchBar 
         searchTerm={searchTerm} 
         onSearch={setSearchTerm}

@@ -7,15 +7,16 @@ import CryptoList from "@/components/CryptoList";
 import { useCryptoData, useHistoricalData } from "@/hooks/useCryptoData";
 import { useState, useEffect } from "react";
 import { CryptoData, ChartData, TimeFrame } from "@/lib/types";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import PriceChart from "@/components/PriceChart";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Index() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { isSignedIn, user } = useUser();
-  const { data: cryptos, isLoading } = useCryptoData();
+  const { data: cryptos, isLoading: isCryptoLoading, error: cryptoError } = useCryptoData();
   const [selectedCryptos, setSelectedCryptos] = useState<[CryptoData | null, CryptoData | null]>([null, null]);
   const [selectedCoin, setSelectedCoin] = useState<CryptoData | null>(null);
   const [chartData, setChartData] = useState<ChartData[]>([]);
@@ -34,7 +35,7 @@ export default function Index() {
   };
 
   // Use the historical data hook when we have a selected coin
-  const { data: historicalData, isLoading: isChartLoading } = useHistoricalData(
+  const { data: historicalData, isLoading: isChartLoading, error: chartError } = useHistoricalData(
     selectedCoin?.id || "",
     timeFrameToDays(timeFrame)
   );
@@ -45,6 +46,24 @@ export default function Index() {
       setChartData(historicalData);
     }
   }, [historicalData]);
+
+  // Error handling for cryptos and chart
+  useEffect(() => {
+    if (cryptoError) {
+      toast({
+        title: t("error"),
+        description: t("failedToFetchCryptos"),
+        variant: "destructive"
+      });
+    }
+    if (chartError) {
+      toast({
+        title: t("error"),
+        description: t("failedToFetchChart"),
+        variant: "destructive"
+      });
+    }
+  }, [cryptoError, chartError, toast, t]);
 
   // Update chart data when selected coin or timeframe changes
   const handleTimeFrameChange = (newTimeFrame: TimeFrame) => {
@@ -86,19 +105,38 @@ export default function Index() {
     });
 
     toast({
-      title: "Crypto Selected",
-      description: `${crypto.name} has been selected for comparison`,
+      title: t("cryptoSelected"),
+      description: `${crypto.name} ${t('hasBeenSelectedForComparison')}`,
     });
   };
 
-  if (isLoading || !cryptos) {
-    return <div className="flex justify-center items-center min-h-[60vh]">Loading...</div>;
+  if (isCryptoLoading) {
+    // SKELETON loader (animated shimmer) for loading state
+    return (
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        <div className="flex justify-center items-center min-h-[60vh] animate-fade-in">
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <Skeleton className="h-32 rounded-lg bg-muted mb-4" key={i} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (cryptoError) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh] animate-fade-in">
+        <span className="text-destructive">{t('failedToFetchCryptos')}</span>
+      </div>
+    );
   }
 
   const isCompareMode = selectedCryptos[0] !== null || selectedCryptos[1] !== null;
 
   return (
-    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 animate-fade-in">
       <div className="text-center mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-4">
           {isSignedIn 
@@ -114,7 +152,7 @@ export default function Index() {
           {isSignedIn && (
             <Button 
               onClick={() => navigate('/wallet')} 
-              className="mb-4 sm:mb-8 w-full sm:w-auto"
+              className="mb-4 sm:mb-8 w-full sm:w-auto hover-scale"
               size="sm"
             >
               {t('goToWallet')}
@@ -129,14 +167,15 @@ export default function Index() {
           <Button 
             variant="outline" 
             onClick={() => setSelectedCoin(null)}
-            className="mb-4"
+            className="mb-4 hover-scale"
             size="sm"
           >
             {t('backToList')}
           </Button>
           {isChartLoading ? (
-            <div className="flex justify-center items-center h-48 sm:h-72 md:h-96">
-              <p>{t('loadingChart')}</p>
+            <div className="flex justify-center items-center h-48 sm:h-72 md:h-96 animate-fade-in">
+              <Skeleton className="h-full w-full rounded-lg bg-muted" />
+              <p className="absolute">{t('loadingChart')}</p>
             </div>
           ) : (
             <PriceChart 

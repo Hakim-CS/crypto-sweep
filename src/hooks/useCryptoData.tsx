@@ -19,13 +19,15 @@ export function useCryptoData() {
       const data = await response.json();
       return data as CryptoData[];
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: "Failed to fetch cryptocurrencies.",
-        variant: "destructive"
-      });
-      console.error(error);
+    meta: {
+      onError: (error: any) => {
+        toast({
+          title: "Error",
+          description: "Failed to fetch cryptocurrencies.",
+          variant: "destructive"
+        });
+        console.error(error);
+      }
     }
   });
 }
@@ -49,13 +51,15 @@ export function useHistoricalData(coinId: string, days: number) {
       return (data.prices || []).map(([timestamp, price]: [number, number]) => ({ timestamp, price })) as ChartData[];
     },
     enabled: !!coinId && !!days,
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: "Failed to fetch chart data.",
-        variant: "destructive"
-      });
-      console.error(error);
+    meta: {
+      onError: (error: any) => {
+        toast({
+          title: "Error",
+          description: "Failed to fetch chart data.",
+          variant: "destructive"
+        });
+        console.error(error);
+      }
     }
   });
 }

@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
@@ -17,7 +18,8 @@ import ThemeToggle from "./components/ThemeToggle";
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import { Menu } from "lucide-react";
 import "./App.css";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+// Import SidebarProvider but we won't use SidebarTrigger anymore
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 const queryClient = new QueryClient();
 
@@ -25,14 +27,12 @@ function Navigation() {
   const { isSignedIn } = useUser();
   const { t } = useLanguage();
 
-  // Hamburger only visible on mobile
+  // Removed SidebarTrigger from here
   return (
     <div className="fixed z-10 top-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-b border-border">
       <div className="container mx-auto px-4 py-2 flex justify-between items-center">
         <div className="flex items-center gap-6">
-          <SidebarTrigger className="md:hidden p-1 hover:bg-muted rounded transition" aria-label="Open menu">
-            <Menu className="h-6 w-6 mr-1" />
-          </SidebarTrigger>
+          {/* Removed the SidebarTrigger component */}
           <Link to="/" className="text-xl font-bold hover-scale">{t('cryptoTracker')}</Link>
           <nav className="hidden md:flex items-center gap-4">
             <Link to="/" className="hover:text-primary transition">{t('home')}</Link>
@@ -74,28 +74,31 @@ function App() {
         <LanguageProvider>
           <TooltipProvider>
             <Router>
-              <div className="flex w-full min-h-screen">
-                <main className="flex-1 pt-14 animate-fade-in">
-                  <Navigation />
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/sign-in/*" element={<SignInPage />} />
-                    <Route path="/sign-up/*" element={<SignUpPage />} />
-                    <Route path="/education" element={<Education />} />
-                    <Route 
-                      path="/wallet" 
-                      element={
-                        <AuthLayout>
-                          <WalletPage />
-                        </AuthLayout>
-                      } 
-                    />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                  <Toaster />
-                  <Sonner />
-                </main>
-              </div>
+              {/* Wrap the app with SidebarProvider to make the sidebar components work */}
+              <SidebarProvider>
+                <div className="flex w-full min-h-screen">
+                  <main className="flex-1 pt-14 animate-fade-in">
+                    <Navigation />
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/sign-in/*" element={<SignInPage />} />
+                      <Route path="/sign-up/*" element={<SignUpPage />} />
+                      <Route path="/education" element={<Education />} />
+                      <Route 
+                        path="/wallet" 
+                        element={
+                          <AuthLayout>
+                            <WalletPage />
+                          </AuthLayout>
+                        } 
+                      />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                    <Toaster />
+                    <Sonner />
+                  </main>
+                </div>
+              </SidebarProvider>
             </Router>
           </TooltipProvider>
         </LanguageProvider>
